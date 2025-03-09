@@ -5,6 +5,7 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc && node scripts/build.js",
+    "build:component": "node scripts/build.js",
     "prepublishOnly": "pnpm run build",
     "test": "jest --watch"
   },

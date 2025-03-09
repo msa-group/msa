@@ -1,19 +1,26 @@
 ClusterApplication:
   Type: ALIYUN::CS::ClusterApplication
   Properties:
+    {{&Parameters.YamlContent}}
+    YamlContent: {{Indent(Parameters.YamlContent, 3)}}
+    {{/}}
+    {{^IsNotEmpty(Parameters.YamlContent)}}
     YamlContent: |
-{{#if Parameters.Namespace}}
+{{&Parameters.Namespace}}
       apiVersion: v1
       kind: Namespace
       metadata:
         name: {{Parameters.Namespace}}
-{{/if}}
+        labels: {{Merge(Get(Parameters, "Namespace.Labels", {}), { app: Parameters.AppName })}}
+{{/}}
       ---
       apiVersion: apps/v1
       kind: Deployment
       metadata:
         name: {{Parameters.AppName}}
         namespace: {{Default(Parameters.Namespace, 'default')}}
+        labels:
+          app: {{Parameters.AppName}}
       spec:
         replicas: {{Default(Parameters.Replicas, 2)}}
         selector:
@@ -21,20 +28,23 @@ ClusterApplication:
             app: {{Parameters.AppName}}
         template:
           metadata:
-            labels:
-              app: {{Parameters.AppName}}
+            labels: {{Merge(Get(Parameters, "Deployment.Labels", {}), { app: Parameters.AppName })}}
           spec:
             containers:
               - image: {{Parameters.Image}}
                 imagePullPolicy: Always
                 name: {{Parameters.AppName}}
                 resources: {}
+                {{&Parameters.Env}}
+                env: {{Parameters.Env}}
+                {{/}}
       ---
       apiVersion: v1
       kind: Service
       metadata:
-        name: {{Join([Parameters.AppName, "-" ,"svc"])}}
+        name: {{Parameters.AppName}}
         namespace: {{Default(Parameters.Namespace, 'default')}}
+        labels: {{Merge(Get(Parameters, "Service.MetadataLabels", {}), { app: Parameters.AppName })}}
       spec:
         ports:
           - port: {{Parameters.Port}}
@@ -47,3 +57,4 @@ ClusterApplication:
     DefaultNamespace: {{Parameters.Namespace}}
     ValidationMode: Basic
     Stage: All
+    {{/}}

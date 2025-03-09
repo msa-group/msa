@@ -25,8 +25,8 @@ function watchFile(watch = true, build = false) {
     components[fileName] = text;
   }
 
-  fs.writeFileSync(path.resolve(__dirname, '../lib/components.js'), `export default ${JSON.stringify(components)}`,);
-  fs.writeFileSync(path.resolve(__dirname, '../lib/specs.js'), `export default ${JSON.stringify(specs)}`,);
+  fs.writeFileSync(path.resolve(__dirname, '../src/components.js'), `export default ${JSON.stringify(components)}`,);
+  fs.writeFileSync(path.resolve(__dirname, '../src/specs.js'), `export default ${JSON.stringify(specs)}`,);
   // if (watch) {
   //   fs.watch(watchPath, { recursive: true }, (event, file) => {
   //     const text = fs.readFileSync(`${watchPath}/${file}`, 'utf8');

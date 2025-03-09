@@ -13,7 +13,8 @@
     "allowSyntheticDefaultImports": true,
     "typeRoots": [ "./typings", "./node_modules/@types"],
     "outDir": "lib",
-    "allowJs": true
+    "allowJs": true,
+    "allowUnusedLabels": true
   },
   "include": [
     "src/**/*.ts"

@@ -1,0 +1,23 @@
+
+Composer:
+  Backend:
+    Component: sae
+    Parameters:
+      Region: cn-hangzhou
+      NamespaceName: ros
+      VpcId: vpc-bp19lfcb7m6zceo7x4wr7
+      VswtichId: vsw-bp1jgvm7m06beroif8a67
+      Name: test_ros
+      ContainerPort: 8080
+      Applications:
+        - ImageUrl: registry.cn-hangzhou.aliyuncs.com/sae-serverless-demo/sae-demo:microservice-java-provider-v1.0
+          AppName: test-ros
+          ContainerPort: 8080/8080
+          ConfigMapData: 
+            Data: 
+              Key: key1
+              Value: value1
+            MountPath: /etc/nginx/nginx.conf
+          Envs:
+            env1: value1
+            env2: value2

@@ -9,7 +9,7 @@ const debugConfigJson = jsYaml.load(debugConfigYaml);
 
 describe("Engine", () => {
   it("should be defined", () => {
-    const text = fs.readFileSync("msa/Msa.yml", "utf8");
+    const text = fs.readFileSync("./__test__/Msa.yml", "utf8");
     const engine = new Engine();
 
     const firstScenceParameters = debugConfigJson.SceneProfiles[0].Parameters;

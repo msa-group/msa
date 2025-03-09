@@ -31,6 +31,9 @@ export const getUtilsHelper = () => {
     JSONStringify: (value, indent = 0) => {
       if (value === undefined || value === null) return value;
       if (typeof value === "string") {
+        if (/^\d+$/.test(value)) {
+          return value;
+        }
         // 处理多行字符串， 并且保持正确缩进
         if (value.includes("\n")) {
           let s = '| \n';
@@ -42,13 +45,12 @@ export const getUtilsHelper = () => {
         }
         try {
           // JSON.parse(value);
-          return JSON.stringify(JSON.parse(value));
+          return JSON.stringify(value);
         } catch (error) {
           return value;
         }
       }
       if (
-        typeof value === "string" ||
         typeof value === "number" ||
         typeof value === "function" ||
         typeof value === "boolean"
@@ -94,7 +96,7 @@ export const getUtilsHelper = () => {
       return value === undefined || value === null || value === '';
     },
 
-    isNotEmpty: (value: unknown) => {
+    IsNotEmpty: (value: unknown) => {
       return !Utils.IsEmpty(value);
     },
 
@@ -108,6 +110,17 @@ export const getUtilsHelper = () => {
       }
       const matched = /oss-.+\.(aliyuncs.com)$/.test(address);
       return matched;
+    },
+
+    Indent: (str: string, indent: number = 2) => {
+      return str.split('\n').map(line => ' '.repeat(indent) + line).join('\n');
+    },
+
+    Merge: (a: Record<string, any>, b: Record<string, any>) => {
+      return {
+        ...a,
+        ...b, 
+      }
     }
 
   }

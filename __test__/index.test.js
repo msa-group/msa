@@ -22,7 +22,7 @@ describe("mseEngine", () => {
     }).then((parseEngine) => {
       const rs = parseEngine.create()
       console.log(rs);
-      const opt = parseEngine.getArchitecture();
+      // const opt = parseEngine.getArchitecture();
       // console.log(JSON.stringify(opt, null, 2), 'rs...')
       // fs.writeFileSync(, './c.yml')
       // expect(parseEngine).toBeDefined();

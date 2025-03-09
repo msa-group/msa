@@ -1,18 +1,16 @@
 import jsYaml from "js-yaml";
-import Handlebars from "handlebars";
 import { get } from "lodash";
-import { pipe } from "lodash/fp";
 import ParseEngine from "./parseEngine";
-import ParserRules, { addContextPrefix } from "./parserRules";
+import ParserRules from "./parserRules";
 import {
-  getOuterEachBlockPosition, mergeName, removeNullValues,
-  removeOuterEachBlock, sortByDependsOn
+  mergeName, removeNullValues,
+  sortByDependsOn, addContextPrefix
 } from "./utils";
 import { getBuildInHelper } from './buildin-helper';
 import Composer from "./composer";
 import Component from "./component";
 import plugins from "./plugins";
-
+import core from "./parser/core";
 
 import type { Composor, EngineContext, GlobalData, ParseOptions } from "./types";
 
@@ -80,6 +78,7 @@ Resources:`,
     return new Promise(async (resolve) => {
       try {
         await this.#parserNameMapping(str, { parameters });
+        // this.nameMapping = proxyNameMapping(this.nameMapping);
         this.#parserMainYaml(str, { parameters });
         const parseEngine = new ParseEngine(this.context, this.nameMapping);
         resolve(parseEngine);
@@ -129,8 +128,12 @@ Resources:`,
       ...get(parameters, 'parameters.Parameters', {}),
     }
     Object.assign(this.context.data.Parameters, params);
-    const composerYaml = this.rules.rule.B.replace(str, { ...this.context.data, ...this.nameMapping }, "Composer", this.nameMapping);
-    const composerJson = jsYaml.load(composerYaml);
+
+    const globalData = { ...this.buildinHelpers, ...this.nameMapping };
+    const msaYaml = core.render(str, { Parameters: this.context.data.Parameters }, globalData, {
+      formatToken: (token: string) => addContextPrefix(token, this.nameMapping)
+    });
+    const composerJson = jsYaml.load(msaYaml);
     this.context.templateJson.main = composerJson;
     const sortedByDependsOn = sortByDependsOn(Object.entries(composerJson.Composer || {}));
     for (const [composerKey, composerContent] of sortedByDependsOn) {
@@ -162,78 +165,19 @@ Resources:`,
       }
     }
 
-    const contextData = { ...this.context.data, Parameters: { ...this.context.data.Parameters, ...composerInstance.parameters }, ...this.nameMapping };
+    const contextData = { Parameters: { ...this.context.data.Parameters, ...composerInstance.parameters }};
+    const globalData = { ...this.buildinHelpers, ...this.nameMapping };
     let self = this;
-    function hasEachBlock(text) {
-      const positions = getOuterEachBlockPosition(text);
-      return positions.length > 0;
-    }
-    function parseEach(text, context, depth = 0) {
-      const positions = getOuterEachBlockPosition(text);
-      let t = '';
-      if (positions.length) {
-        for (let i = positions.length - 1; i >= 0; i--) {
-          const pos = positions[i];
-          const eachBlock = text.slice(pos.start, pos.end) as string;
-          const lines = eachBlock.split('\n');
-          const startEach = lines[0];
-          const content = lines.slice(1, lines.length - 1).join('\n');
-          const match = /{{#each ([\s\S]*?)}}/g;
-          const exp = startEach.replace(match, (m, p) => {
-            return addContextPrefix(p)
-          });
 
-          const arr = eval(exp);
-          if (Array.isArray(arr)) {
-            arr.forEach((item, index) => {
-              const c = self.rules.preparsRules[0].replace(content);
-              if (item?.PluginClassName && !item?.PluginClassId) {
-                const plugin = plugins.find(
-                  v => v.name === item.PluginClassName ||
-                    v.alias === item.PluginClassName
-                );
-                if (plugin) {
-                  item.PluginClassId = plugin.id;
-                }
-              }
-              const contextData = { ...context, item: { ...item, parent: context.parent || {} }, index };
-              const d = self.rules.rule.ifLogic.replace(c, contextData, undefined, self.nameMapping);
-              const e = Handlebars.compile(d)(contextData);
-              const f = self.rules.rule.D.replace(e);
-              const g = removeOuterEachBlock(f);
-              const h = self.rules.rule.parseDoubleCurliesAndEvalCall.replace(g, contextData, undefined, self.nameMapping, true);
-              const fjson = jsYaml.load(h);
-              const removedNullValues = removeNullValues(fjson);
-              for (const [key, value] of Object.entries(removedNullValues)) {
-                t = t + jsYaml.dump({ [key]: value });
-              }
-              let i = hasEachBlock(content);
-              if (i) {
-                const [c] = parseEach(content, { ...contextData, parent: { ...contextData.item, index } }, depth + 1);
-                t = t + c;
-              }
-            });
-          }
-        }
-        return [t, true, positions];
-      }
-      return [text, false, positions];
-    }
-    let [t, isEach, positions] = parseEach(componentText, contextData);
-    if (isEach) {
-      positions.forEach(pos => {
-        const matchText = componentText.slice(pos.start, pos.end);
-        t = componentText.replace(matchText, t);
-      })
-    }
-    const c = this.rules.preparsRules[0].replace(t);
-    const b = this.rules.rule.ifLogic.replace(c, contextData, undefined, this.nameMapping);
-    const e = Handlebars.compile(b)(contextData);
-    const f = this.rules.rule.parseDoubleCurliesAndEvalCall.replace(e, contextData, undefined, this.nameMapping);
-    let r = f;
+    const componentYaml = core.render(componentText, contextData, globalData, {
+      formatToken: (token: string) => addContextPrefix(token, this.nameMapping)
+    });
 
+    let r = componentYaml;
+
+    // TODO: 命名需要优化
     let h = '';
-    const a = jsYaml.load(f) as Record<string, any>;
+    const a = jsYaml.load(componentYaml) as Record<string, any>;
     const z = removeNullValues(a);
     for (const [name, value] of Object.entries(z)) {
       self.nameMapping[composerInstance.name][name] = `${composerInstance.name}${name}`
@@ -289,18 +233,13 @@ Resources:`,
       const composerInstance = new Composer(data, this.globalData);
 
       const template = get(this.buildinComponents, value, '') as string;
-      let t = removeOuterEachBlock(template);
+      let t = template;
 
-      for (const rule of this.rules.preparsRules) {
-        t = rule.replace(t);
-      }
 
-      const contextData = { ...this.context.data, Parameters: { ...this.context.data.Parameter, ...composerInstance.parameters } }
-
-      const parsedText = pipe(
-        (text) => this.rules.rule.ifLogic.replace(text, contextData),
-        (text) => Handlebars.compile(text, { noEscape: true }),
-      )(t)(contextData);
+      const contextData = { Parameters: { ...this.context.data.Parameter, ...composerInstance.parameters } }
+      const parsedText = core.render(t, contextData, this.buildinHelpers, {
+        formatToken: addContextPrefix
+      });
 
       const componentJson = jsYaml.load(parsedText) as Record<string, any>;
 

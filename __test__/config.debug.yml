@@ -21,5 +21,4 @@ SceneProfiles:
     Template: "msa/Msa.yml"
     Parameters: 
       Backend:
-        NamespaceId: xxx
-        NamespaceName: xxx
+        Handler: index.handler

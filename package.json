@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
+    "build:component": "pnpm -r build:component",
     "test": "jest --watch"
   },
   "keywords": [],

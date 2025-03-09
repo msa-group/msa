@@ -58,66 +58,6 @@ export function findKeyBy<T>(obj: T, targetKey: string, callback?: (obj: T, key:
   return results;
 }
 
-/**
- * 将源文件内的左单花括号用特定符号替换
- * 确保 handles 能正常解析
- * @description 换了方案，不再需要这个函数
- * @example
- * asd: '{"asd": {"zxc": {{xxx}}}}'
- * 转换为
- * asd: '!&&"asd": !&&"zxc": {{xxx}}&&!&&!'
- */
-export function replaceSingleParentheses(str: string) {
-  const stack = [];
-  const matches = [];
-  let doubleBraces = [];
-  let insideDoublesBraces = false;
-  let res = "";
-
-
-  for (let i = 0; i < str.length; i++) {
-    const char = str[i];
-    const nextChar = str[i + 1];
-    if (char === '{' && nextChar === '{') {
-      doubleBraces.push(...[i, i + 1]);
-      insideDoublesBraces = true;
-      i++; // 跳过第二个花括号
-    } else if (char === '}' && nextChar === '}' && doubleBraces.length > 0) {
-      doubleBraces = [];
-      i++;
-      insideDoublesBraces = false;
-    } else if (char === '{' && !insideDoublesBraces) {
-      stack.push(i);
-    } else if (char === '}' && !insideDoublesBraces) {
-      if (stack.length === 0) {
-        throw new Error('Unbalanced braces');
-      }
-      const start = stack.pop();
-      const match = { start, end: i };
-      matches.push(match);
-    }
-  }
-
-  if (stack.length > 0) {
-    throw new Error('Unbalanced braces');
-  }
-
-  for (let i = 0; i < str.length; i++) {
-    const char = str[i];
-    const inLeft = matches.find(v => v.start === i);
-    const inRight = matches.find(v => v.end === i)
-    if (inLeft) {
-      res += "!&&"
-    } else if (inRight) {
-      res += "&&!"
-    } else {
-      res += char;
-    }
-  }
-
-  return res;
-
-}
 
 export function mergeName(...names: string[]) {
   return names.join('');
@@ -147,28 +87,6 @@ export function getIndent(str: string, index: number) {
   const line = getLineNumber(str, index);
   const currentLineContext = lines[line - 1];
   return currentLineContext.length - currentLineContext.trimStart().length;
-}
-
-export function removePrefix(obj: Record<string, any>, prefix = 'copy__') {
-  const newObj = {};
-
-  for (const key in obj) {
-    const newKey = key.startsWith(prefix) ? key.slice(prefix.length) : key;
-    newObj[newKey] = obj[key];
-  }
-
-  return newObj;
-}
-
-export function extractParametersBlock(text) {
-  const regex = /\s*Parameters:\s*\n((?:\s{2,}\w+:\n(?:\s{4}.*\n)*\s{4}.*\n?)*)/;
-  const match = text.match(regex);
-
-  if (match) {
-    return `Parameters:\n${match[1]}`;
-  }
-
-  return '';
 }
 
 
@@ -217,46 +135,94 @@ export function removeNullValues(obj: Record<string, any>) {
   return obj;
 }
 
+export function addContextPrefix(p1: string, nameMapping?: Record<string, Record<string, string | boolean>>) {
+  // 记录当前是否在处理对象的键
+  let isProcessingObjectKey = false;
 
-export function removeOuterEachBlock(template: string) {
-  let t = template;
-  const positions = getOuterEachBlockPosition(template);
-  if (positions.length) {
-    for (let i = positions.length - 1; i >= 0; i--) {
-      const pos = positions[i];
-      t = t.substring(0, pos.start) + t.substring(pos.end)
-    }
-  }
-
-  return t;
-}
-
-
-export function getOuterEachBlockPosition(input: string) {
-  const result = [];
-  const startTag = "{{#each ";
-  const endTag = "{{/each}}";
-
-  let level = 0;
-  let blockStart = null;
-
-  for (let i = 0; i < input.length; i++) {
-    if (input.startsWith(startTag, i)) {
-      if (level === 0) {
-        blockStart = i;
+  // 匹配对象字面量、标识符、字符串、数字和布尔值
+  const result = p1.replace(/({)|(:)|(})|(\$\w+(?:\.\$?\w+)*|\b\w+(?:\.\w+)*\b)|"[^"]*"|'[^']*'|\b\d+\b|\b(?:true|false|null|undefined)\b/g,
+    (match, objectStart, colon, objectEnd, identifier, offset, string) => {
+      let t = "";
+      // 处理对象开始标记
+      if (objectStart) {
+        isProcessingObjectKey = true;
+        return match;
       }
-      level++;
-      i += startTag.length - 1; // 跳过已匹配的部分
-    } else if (input.startsWith(endTag, i)) {
-      level--;
-      if (level === 0 && blockStart !== null) {
-        result.push({ start: blockStart, end: i + endTag.length });
-        blockStart = null; // 重置开始位置
-      }
-      i += endTag.length - 1; // 跳过已匹配的部分
-    }
-  }
 
+      // 处理冒号，表示从键切换到值
+      if (colon) {
+        isProcessingObjectKey = false;
+        return match;
+      }
+
+      // 处理对象结束标记
+      if (objectEnd) {
+        return match;
+      }
+
+      // 如果是字符串、数字或布尔值，直接返回
+      if (
+        (match.startsWith('"') && match.endsWith('"')) ||
+        (match.startsWith("'") && match.endsWith("'")) ||
+        /^\d+$/.test(match) ||
+        /^(true|false)$/.test(match)
+      ) {
+        return match;
+      }
+
+      // 处理特殊值
+      if (match === "undefined") {
+        return "undefined";
+      }
+      if (match === "null") {
+        return "null";
+      }
+
+      // 如果是对象的键，不添加前缀
+      if (isProcessingObjectKey) {
+        isProcessingObjectKey = false;  // 键处理完后重置状态
+        return match;
+      }
+
+      // 处理以 $ 开头的特殊变量
+      if (identifier && identifier.startsWith("$")) {
+        return "context." + identifier;
+      }
+
+      // 处理一般标识符
+      if (identifier && identifier.includes('.')) {
+        const parts = identifier.split('.');
+        // 如果第一部分已经是以 $ 开头，则不添加 __Global__
+        if (parts[0].startsWith("$")) {
+          return "context." + identifier;
+        } else {
+          parts[0] = parts[0] === "Parameters" ? `context.${parts[0]}` : `context.__Global__.${parts[0]}`;
+          if (nameMapping && nameMapping[identifier]) {
+            if (!nameMapping[identifier].__resource__) {
+              return undefined;
+            }
+            return `context.__Global__.${identifier}.__resource__`;
+          }
+          return parts.join('.');
+        }
+      }
+
+      // 默认处理
+      if (identifier) {
+        t = identifier === "Parameters" ? `context.${identifier}` : `context.__Global__.${identifier}`;
+        if (nameMapping) {
+          // console.log(nameMapping[match], match, '??????????????')
+          if (nameMapping[match]) {
+            if (!nameMapping[match].__resource__) {
+              return undefined;
+            }
+            return `context.__Global__.${identifier}.__resource__`;
+          }
+        }
+        return t
+      }
+      return match;
+    });
+  // console.log(result, '>>>>>>>>>>>>>>>>>>>')
   return result;
 }
-

@@ -71,7 +71,9 @@ export const getRosHelper = () => {
         ]
       }
       return temp;
-    }
+    },
+    RosConfig: () => {},
+    
   };
   return Ros;
 }
