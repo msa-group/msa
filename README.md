@@ -13,5 +13,6 @@ pnpm install
 
 ```bash
 pnpm test
+pnpm e2e
 ```
 

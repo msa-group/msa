@@ -1,4 +1,4 @@
 node_modules
 lib
-./src/components.js
-./src/specs.js
+src/components.js
+src/specs.js

@@ -1,6 +1,6 @@
 const rspack = require('@rspack/core');
-const Router = require('./scripts/mock');
-const watchFile = require('./scripts/ymlToStr');
+const Router = require("./e2e/router");
+// const watchFile = require('./scripts/ymlToStr');
 
 globalThis.process.env.RUNNER = 'rspack';
 
@@ -9,28 +9,28 @@ globalThis.process.env.RUNNER = 'rspack';
  */
 module.exports = {
   entry: {
-    main: './demo/index.js',
+    main: './e2e/index.tsx',
   },
   plugins: [
     new rspack.HtmlRspackPlugin({
       title: "MSA parser engine",
-      template: 'demo/index.html',
+      template: './e2e/index.html',
     })
   ],
   devServer: {
     setupMiddlewares: (middlewares) => {
-      watchFile();
+      // watchFile();
       middlewares.unshift(Router);
       return middlewares;
     }
   },
   resolve: {
-    extensions: ['.ts', '.js'],
+    extensions: ['.tsx', '.ts', '.js'],
   },
   module: {
     rules: [
       {
-        test: /\.ts$/,
+        test: /\.tsx?$/,
         exclude: [/node_modules/],
         loader: 'builtin:swc-loader',
         options: {

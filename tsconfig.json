@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "ES2015",
+    "jsx": "react",
+    "moduleResolution": "node",
+    "lib": ["es2019", "DOM"],
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "stripInternal": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "allowUnusedLabels": true
+  },
+  "include": [
+    "e2e/index.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+  ]
+}

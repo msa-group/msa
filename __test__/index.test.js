@@ -5,7 +5,7 @@ import MseEngine from "../packages/engine/src/index";
 
 const debugConfigYaml = fs.readFileSync("./__test__/config.debug.yml");
 const debugConfigJson = jsYaml.load(debugConfigYaml);
-const text = fs.readFileSync("./__test__/msa.yml", "utf8");
+const text = fs.readFileSync("./__test__/msa/msa.yml", "utf8");
 
 describe("mseEngine", () => {
   it("should be defined", () => {

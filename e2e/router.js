@@ -20,7 +20,7 @@ const RouterMap = {
     })
   },
   '/api/msa': (req, res) => {
-    const filePath = req.query.filePath;
+    const filePath = "__test__/" + req.query.filePath;
     const content = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
     res.json({
         code: 200,

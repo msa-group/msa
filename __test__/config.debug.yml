@@ -18,7 +18,7 @@ SceneProfiles:
   - DisplayName:
       zh-cn: 单机版
       en: Single Service
-    Template: "msa/Msa.yml"
+    Template: "msa/msa.yml"
     Parameters: 
       Backend:
         Handler: index.handler
