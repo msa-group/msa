@@ -8,15 +8,59 @@ Usage
 
 ```js
 import Engine from "msa-engine";
+import { components } from "msa-spec";
 
 const engine = new Engine();
 
-engine.parse(yamlText).then((parsedEngine) => {
+const Global = {};
+const Parameters = {};
+
+engine.parse(yamlText, {
+  Global,
+  Parameters,
+}, { components }).then((parsedEngine) => {
   console.log(parsedEngine.create());
   console.log(parsedEngine.getOperation());
 });
 ```
 
+Parser
+------
+渲染基础数据
+```html
+{{name}}
+```
+
+渲染 True/False
+```html
+{{&true}}
+True
+{{/}}
+{{^true}}
+False
+{{/}}
+```
+渲染列表
+```html
+{{#list}}
+Index: {{$index}}
+Item: {{$item}}
+{{/}}
+```
+
+渲染嵌套列表
+```html
+{{#list}}
+Index: {{$index}}
+Item: {{$item}}
+{{#$item.children}}
+  ChildIndex: {{$index}}
+  Item: {{$item}}
+  ParentIndex: {{$parent.$index}}
+  ParentItem: {{$parent.$item}}
+{{/}}
+{{/}}
+```
 
 Testing
 -------
@@ -40,10 +84,10 @@ npm run dev
 **Example**
 
 ```yaml
-{{#if and(eq(Parameters.Cpu, 1), eq(Parameters.Memory, 1024))}}
+{{&and(eq(Parameters.Cpu, 1), eq(Parameters.Memory, 1024))}}
 HttpTrigger:
   Type: ALIYUN::FC3::Trigger
-{{/if}}
+{{/}}
 ```
 
 ### [{{or}}](buildin/comparison.ts)
@@ -56,10 +100,10 @@ HttpTrigger:
 **Example**
 
 ```yaml
-{{#if or(eq(Parameters.Cpu, 1), eq(Parameters.Memory, 1024))}}
+{{&or(eq(Parameters.Cpu, 1), eq(Parameters.Memory, 1024))}}
 HttpTrigger:
   Type: ALIYUN::FC3::Trigger
-{{/if}}
+{{/}}
 ```
 
 ### [{{not}}](buildin/comparison.ts)
@@ -72,10 +116,10 @@ HttpTrigger:
 **Example**
 
 ```yaml
-{{#if not(eq(Parameters.Cpu, 1))}}
+{{&not(eq(Parameters.Cpu, 1))}}
 HttpTrigger:
   Type: ALIYUN::FC3::Trigger
-{{/if}}
+{{/}}
 ```
 
 ### [{{eq}}](buildin/comparison.ts)
@@ -90,10 +134,10 @@ HttpTrigger:
 **Example**
 
 ```yaml
-{{#if eq(Parameters.Cpu, 1)}}
+{{&eq(Parameters.Cpu, 1)}}
 HttpTrigger:
   Type: ALIYUN::FC3::Trigger
-{{/if}}
+{{/}}
 ```
 
 ### [{{gt}}](buildin/comparison.ts)
@@ -154,10 +198,10 @@ HttpTrigger:
 **Example**
 
 ```yaml
-{{#if IsTls(Parameters.Url)}}
+{{&IsTls(Parameters.Url)}}
 HttpTrigger:
   Type: ALIYUN::FC3::Trigger
-{{/if}}
+{{/}}
 ```
 
 ### [{{Join}}](buildin/utils.ts)
