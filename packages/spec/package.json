@@ -1,8 +1,12 @@
 {
   "name": "msa-spec",
-  "version": "0.0.1-beta-2",
+  "version": "0.1.0-beta-1",
   "description": "",
   "main": "lib/index.js",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "scripts": {
     "build": "node scripts/build.js && tsc",
     "build:component": "node scripts/build.js",

@@ -7,7 +7,8 @@
     "build": "pnpm -r build",
     "build:component": "pnpm -r build:component",
     "test": "jest --watch",
-    "e2e": "pnpm run build && pnpm run build:component && rspack serve"
+    "e2e": "pnpm run build && pnpm run build:component && rspack serve",
+    "publish": "pnpm -r publish"
   },
   "keywords": [],
   "author": "kaplax",
