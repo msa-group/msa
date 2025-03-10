@@ -45,7 +45,13 @@ export const getUtilsHelper = () => {
         }
         try {
           // JSON.parse(value);
-          return JSON.stringify(value);
+          const parsed = JSON.parse(value);
+          const isObject = typeof parsed === 'object';
+          if (isObject) {
+            return JSON.stringify(value);
+          } else {
+            return value;
+          }
         } catch (error) {
           return value;
         }
@@ -112,7 +118,7 @@ export const getUtilsHelper = () => {
       return matched;
     },
 
-    Indent: (str: string, indent: number = 2) => {
+    Indent: (str: string = "", indent: number = 2) => {
       return str.split('\n').map(line => ' '.repeat(indent) + line).join('\n');
     },
 

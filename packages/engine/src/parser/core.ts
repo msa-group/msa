@@ -67,6 +67,7 @@ function nestTokens(tokens) {
       case '#':
       case '^':
       case '&':
+      case '!':
         collector.push(token);
         sections.push(token);
         collector = token[4] = [];
@@ -191,7 +192,7 @@ function parseTemplate(template, tags) {
     tagIndex++;
     tokens.push(token);
 
-    if (type === '#' || type === '^' || type === '&') {
+    if (type === '#' || type === '^' || type === '&' || type === '!') {
       sections.push(token);
     } else if (type === '/') {
       openSection = sections.pop();
@@ -331,7 +332,7 @@ class Write {
       if (symbol === '#') {
         value = this.renderSection(token, context, partials, originalTemplate, config);
       }
-      else if (symbol === '^') {
+      else if (symbol === '^' || symbol === '!') {
         value = this.renderInverted(token, context, partials, originalTemplate, config);
       }
       else if (symbol === '>') {

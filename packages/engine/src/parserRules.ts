@@ -20,7 +20,7 @@ class ParserRules {
         replace(str: string) {
           const match = /{{([^}]+)}}/g;
           return str.replace(match, (_match, p1) => {
-            if (/^(&|#|\^|\/|\$)/g.test(p1)) return `{{${p1}}}`;
+            if (/^(&|#|\^|\/|\$|!)/g.test(p1)) return `{{${p1}}}`;
             return `"#%%${p1.replace(/"/g, '\\"')}%%"`;
           })
         }
