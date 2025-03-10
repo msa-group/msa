@@ -39,6 +39,9 @@ True
 {{^true}}
 False
 {{/}}
+{{!true}}
+False
+{{/}}
 ```
 渲染列表
 ```html
