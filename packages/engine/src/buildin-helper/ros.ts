@@ -72,8 +72,21 @@ export const getRosHelper = () => {
       }
       return temp;
     },
-    RosConfig: () => {},
-    
+    RosEnvs: (obj: any) => {
+      let res = [];
+      Object.entries(obj).map(([key, value]) => {
+        res.push( {
+          name: key,
+          value: value,
+        })
+      });
+      return {
+        ["Fn::Sub"]: [
+          "${ConfigMapData}",
+          {ConfigMapData: res},
+        ]
+      }
+    },
   };
   return Ros;
 }

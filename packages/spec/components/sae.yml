@@ -9,8 +9,6 @@ Namespace:
 
 SecurityGroup:
   Type: ALIYUN::ECS::SecurityGroup
-  DependsOn: 
-    - Vpc
   Properties:
     VpcId: {{Parameters.VpcId}}
     SecurityGroupIngress:
@@ -25,13 +23,23 @@ SecurityGroup:
 {{#Default(Parameters.Applications, [])}}
 ConfigMap{{$index}}:
   Type: ALIYUN::SAE::ConfigMap
+{{&not(Parameters.NamespaceId)}}
   DependsOn:
     - Namespace
+{{/}}
   Properties:
     Name: {{Join(['configmap', "-",$item.AppName])}}
     NamespaceId: 
+{{&not(Parameters.NamespaceId)}}
       Ref: Namespace
-    Data: {{RosConfig($item.ConfigMapData.Data)}}
+{{/}}
+{{&(Parameters.NamespaceId)}}
+      {{Parameters.NamespaceId}}
+{{/}}
+    Data: 
+      {{#($item.ConfigMapData)}}
+      {{$item.Data.Key}}: {{$item.Data.Value}}
+      {{/}}
 
 Application{{$index}}:
   Type: ALIYUN::SAE::Application
@@ -39,5 +47,48 @@ Application{{$index}}:
     - Namespace
     - ConfigMap{{$index}}
     - SecurityGroup
-    - Vpc
+  Properties:
+    PackageType: Image
+    ImageUrl: {{$item.ImageUrl}}
+    ProgrammingLanguage: {{Default($item.ProgrammingLanguage, "java")}}
+    Replicas: {{Default($item.Replicas, 2)}}
+    NamespaceId: 
+{{&(Parameters.NamespaceId)}}
+      {{Parameters.NamespaceId}}
+{{/}}
+{{&not(Parameters.NamespaceId)}}
+      Ref: Namespace
+{{/}}
+    AppSource: micro_service
+    AppName: {{$item.AppName}}
+    AutoConfig: false
+    VpcId: {{Parameters.VpcId}}
+    VSwitchId: {{Parameters.VswtichId}}
+    SecurityGroupId: 
+      Ref: SecurityGroup
+    Cpu: {{Default($item.Cpu, 1000)}}
+    Memory: {{Default($item.Memory, 2048)}}
+    {{&($item.Envs)}}
+    Envs: {{RosEnvs($item.Envs)}}
+    {{/}}
+    ConfigMapMountDesc:
+      Fn::Sub:
+        - |
+          [
+            {{#Default($item.ConfigMapData, [])}}
+            {
+            "ConfigMapId": "${ConfigMapId}",
+            "Key": "${Key{{$index}}}",
+            "MountPath": "${MountPath{{$index}}}"
+          }
+          {{/}}
+          ]
+        - ConfigMapId: 
+            Fn::GetAtt:
+              - ConfigMap{{$index}}
+              - ConfigMapId
+          {{#Default($item.ConfigMapData, [])}}
+          Key{{$index}}: {{Default($item.Data.Key, "key1")}}  
+          MountPath{{$index}}: {{Default($item.MountPath, "/etc/nginx/nginx.conf")}}  
+          {{/}}
 {{/}}

@@ -352,3 +352,28 @@ Fn::Sub:
     item2: test2
 ```
 
+
+### [{{RosEnvs}}](buildin/ros.ts)
+将环境变量对象转换成 SAE 的 Evns 对象数组的形式
+**参数**：`obj`
+
+* `obj` **{Record<string, string>}**
+* `returns` **{Array<{name: string, value: string}>}**: 返回值，返回 对象数组
+
+**Example**
+
+```yaml
+{{RosEnvs({env1: value1, env2: value2})}}
+``` 
+
+**输出**
+
+```yaml
+Fn::Sub:
+  - "${res}",
+  - res:
+    - name: env1
+      value: value1
+    - name: env2
+      value: value2
+```

@@ -1,3 +1,4 @@
+
 Composer:
   Backend:
     Component: sae
@@ -13,10 +14,15 @@ Composer:
           AppName: test-ros
           ContainerPort: 8080/8080
           ConfigMapData: 
-            Data: 
-              Key: key1
-              Value: value1
-            MountPath: /etc/nginx/nginx.conf
+            - Data: 
+                Key: key1
+                Value: value1
+              MountPath: /etc/nginx/nginx.conf
+            - Data:
+                Key: key2
+                Value: value2
+              MountPath: /test
           Envs:
             env1: value1
             env2: value2
+
