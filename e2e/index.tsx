@@ -124,14 +124,50 @@ function App() {
 
   const handleMenuClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    setOpenMenu(!openMenu);
+    setOpenMenu(prev => !prev);
+  };
+
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    try {
+      await engine.parse(msaYamlRef.current, {
+        Global: globalParameters,
+        Parameters: currentScenceProfile.Parameters,
+      }, {
+        components
+      }).then((parseEngine) => {
+        const rs = parseEngine.create();
+        const arch = parseEngine.getArchitecture();
+        setArch(JSON.stringify(arch, null, 2));
+        setRosYaml(rs);
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
     <div>
       <header className="flex item-center gap-4">
-        <button className="menu" onClick={handleMenuClick}>场景列表</button>
-        <select id="select-env" className="flex-1">
+        <button 
+          className="menu" 
+          onClick={handleMenuClick}
+          style={{ minWidth: '100px' }}
+        >
+          场景列表
+        </button>
+        <select 
+          id="select-env" 
+          className="flex-1"
+          onChange={(e) => {
+            const selected = config.SceneProfiles.find(profile => 
+              profile.Template === e.target.value
+            );
+            setCurrentScenceProfile(selected);
+          }}
+        >
           {
             config.SceneProfiles.map((item, index) => (
               <option key={index} value={item.Template}>{item.DisplayName["zh-cn"]}</option>
@@ -183,19 +219,13 @@ function App() {
             <h3 className="panel-title">
               <div className="flex justify-between full-w">
                 <span>MSA YAML Editor</span>
-                <button id="generate-btn" onClick={() => {
-                  engine.parse(msaYamlRef.current, {
-                    Global: globalParameters,
-                    Parameters: currentScenceProfile.Parameters,
-                  }, {
-                    components
-                  }).then((parseEngine) => {
-                    const rs = parseEngine.create();
-                    const arch = parseEngine.getArchitecture();
-                    setArch(JSON.stringify(arch, null, 2));
-                    setRosYaml(rs);
-                  });
-                }}>生成</button>
+                <button 
+                  id="generate-btn" 
+                  onClick={handleGenerate}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? '生成中...' : '生成'}
+                </button>
               </div>
             </h3>
             <div className="panel-content">

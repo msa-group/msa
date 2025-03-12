@@ -6,25 +6,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MSA</title>
   <style>
+    :root {
+      --primary-color: #2563eb;
+      --secondary-color: #1e40af;
+      --background-color: #f8fafc;
+      --text-color: #1e293b;
+      --border-color: #e2e8f0;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+    }
+
     body,
     html {
       padding: 0;
       margin: 0;
       interpolate-size: allow-keywords;
       font-size: 14px;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     }
 
     button {
-      border: 1px solid #cbcbcb;
+      border: 1px solid var(--border-color);
       outline: none;
       background-color: white;
       padding: 0.4rem 1rem;
-      border-radius: .2rem;
+      border-radius: .4rem;
       cursor: pointer;
+      transition: var(--transition);
+      box-shadow: var(--shadow);
+    }
+
+    button:hover {
+      background-color: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+      transform: translateY(-1px);
     }
 
     button:active {
-      background-color: #f0f0f0;
+      background-color: var(--secondary-color);
+      transform: translateY(0);
     }
 
     textarea {
@@ -64,66 +87,72 @@
     #root {
       padding: 1rem;
       display: flex;
-      gap: 0.6rem;
+      gap: 1rem;
+    }
 
-      .left,
-      .right {
-        flex: 1;
-        max-width: 100%;
-        overflow: auto;
-      }
+    #root .left,
+    #root .right {
+      flex: 1;
+      max-width: 100%;
+      overflow: auto;
+    }
 
-      .left,
-      .right {
-        .panel-content {
-          max-height: calc(100vh - 100px);
-          overflow: auto;
-        }
-      }
+    #root .left .panel-content,
+    #root .right .panel-content {
+      max-height: calc(100vh - 100px);
+      overflow: auto;
     }
 
     .menu-container {
       position: fixed;
       top: 0;
       left: 0;
+      width: 100%;
       height: 100%;
       z-index: 2;
-      background-color: rgba(0, 0, 0, 0.2);
+      background-color: rgba(0, 0, 0, 0);
       overflow: hidden;
+      pointer-events: none;
+      transition: background-color var(--transition);
+    }
 
-      &.open {
-        width: 100%;
-        .menu-content {
-          transform: translateX(0);
-        }
-      }
+    .menu-container.open {
+      background-color: rgba(0, 0, 0, 0.3);
+      pointer-events: all;
+    }
 
-      &.close {
-        .menu-content {
-          transform: translateX(-100%);
-        }
-      }
+    .menu-content {
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+      background-color: white;
+      padding: 1rem;
+      position: absolute;
+      box-shadow: 0 0 14px 2px rgba(0, 0, 0, 0.2);
+      width: 240px;
+      height: 100%;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      transform: translateX(-100%);
+      opacity: 0;
+      will-change: transform, opacity;
+    }
 
-      .menu-content {
-        transition: transform .3s linear;
-        background-color: white;
-        padding: 16px;
-        position: absolute;
-        box-shadow: 0 0 14px 2px rgba(0, 0, 0, 0.2);
-        transform: translateX(-100%);
-        width: 200px;
-        height: 100%;
-        left: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+    .menu-container.open .menu-content {
+      transform: translateX(0);
+      opacity: 1;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-        .menu-item {
-          padding: 10px;
-          border-bottom: 1px solid #ccc;
-          cursor: pointer;
-        }
-      }
+    .menu-item {
+      padding: 0.75rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .menu-item:hover {
+      background-color: var(--background-color);
     }
 
     #json-viewer,
@@ -139,33 +168,38 @@
     }
 
     .panel {
-      margin-bottom: 10px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      background-color: white;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
 
-      .panel-title {
-        cursor: pointer;
-        display: flex;
-        height: 32px;
+    .panel:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
 
+    .panel-title {
+      cursor: pointer;
+      display: flex;
+      height: 32px;
+      font-weight: 500;
+      color: var(--primary-color);
+      transition: var(--transition);
+    }
 
+    .panel-title:hover {
+      color: var(--secondary-color);
+    }
 
-        &.active {
-          &+.panel-content {
-            height: 0;
-          }
-
-
-        }
-      }
-
-      .panel-content {
-        height: auto;
-        overflow-y: clip;
-        overflow-x: auto;
-        transition: height .3s linear;
-      }
+    .panel-content {
+      height: auto;
+      overflow-y: clip;
+      overflow-x: auto;
+      transition: var(--transition);
     }
 
     header {
@@ -177,10 +211,15 @@
       padding: 0 .4rem;
       width: 100%;
       height: 32px;
-      border: 1px solid #cbcbcb;
+      border: 1px solid var(--border-color);
       outline: none;
       background-color: white;
-      border-radius: .2rem;
+      border-radius: .4rem;
+      transition: var(--transition);
+    }
+
+    #select-env:hover {
+      border-color: var(--primary-color);
     }
   </style>
 </head>
