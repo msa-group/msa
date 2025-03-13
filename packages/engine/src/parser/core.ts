@@ -317,7 +317,7 @@ class Write {
     const tags = this.getConfigTags(config);
     const tokens = this.parse(template, tags);
     this.contextView = view;
-    const context = (view instanceof Context) ? view : new Context(view, globalView, undefined, undefined, config?.formatToken || defaultFormatToken);
+    const context = (view instanceof Context) ? view : new Context(view, globalView, undefined, undefined, config?.formatToken || defaultFormatToken, config?.mergeView);
     return this.renderTokens(tokens, context, undefined, template, config);
   }
 
@@ -449,21 +449,24 @@ class Context {
   cache: Record<string, any>;
   globalView: Record<string, any>;
   formatToken: (token: string) => string;
-  constructor(view, globalView, parentContext, index, formatToken) {
+  mergeView?: (data: any) => any;
+  constructor(view, globalView, parentContext, index, formatToken, mergeView?: (data: any) => any) {
+    const mergedView = mergeView ? mergeView(view) : view 
     this.view = parentContext ? {
       ...parentContext.view,
-      $item: view || {},
+      $item: mergedView || {},
       $parent: parentContext.view,
       $index: index,
-    } : view;
+    } : mergedView
     this.parent = parentContext;
     this.cache = { '.': this.view };
     this.globalView = globalView;
     this.formatToken = formatToken;
+    this.mergeView = mergeView;
   }
 
-  push(view, globalView = this.globalView, index, formatToken = this.formatToken) {
-    return new Context(view, globalView, this, index, formatToken);
+  push(view, globalView = this.globalView, index, formatToken = this.formatToken, mergedView = this.mergeView) {
+    return new Context(view, globalView, this, index, formatToken, mergedView);
   }
 
   lookup(name) {
@@ -503,6 +506,7 @@ const write = new Write();
 interface Core {
   render: (template: string, view: Record<string, any>, globalView: Record<string, any>, config?: {
     formatToken?: (token: string) => string;
+    mergeView?: (data: any) => any;
   }) => string;
 }
 

@@ -21,7 +21,7 @@ class Engine {
   private buildinHelpers: Record<string, any> = {};
   private registeredHelper: Record<string, any> = {};
   private globalData: GlobalData = { Parameters: {} };
-  private nameMapping: Record<string, Record<string, string | boolean>> = {};
+  private nameMapping: Record<string, Record<string, string>> = {};
   private deletedMergedName: Set<string> = new Set();
   private mergedNames: Set<string> = new Set();
   private buildinComponents: Record<string, any> = {};
@@ -90,6 +90,16 @@ Resources:`,
     });
   }
 
+  #mergePluginClassId(data: any) {
+    if (data.PluginClassName && !data.PluginClassId) {
+      data.PluginClassId = plugins.find(
+        v => v.name === data.PluginClassName ||
+          v.alias === data.PluginClassName
+      )?.id;
+    }
+    return data;
+  }
+
   async #parserNameMapping(text: string, config: { parameters: Record<string, any> }) {
 
     const globalParameters = get(config, 'parameters.Global', {});
@@ -131,7 +141,8 @@ Resources:`,
 
     const globalData = { ...this.buildinHelpers, ...this.nameMapping };
     const msaYaml = core.render(str, { Parameters: this.context.data.Parameters }, globalData, {
-      formatToken: (token: string) => addContextPrefix(token, this.nameMapping)
+      formatToken: (token: string) => addContextPrefix(token, this.nameMapping),
+      mergeView: this.#mergePluginClassId
     });
     const composerJson = jsYaml.load(msaYaml);
     this.context.templateJson.main = composerJson;
@@ -147,14 +158,13 @@ Resources:`,
         dependsOn: composerContent.DependsOn,
         componentName: composerContent.Component,
       }
-      const composerInstance = new Composer(composerData, this.context.data);
+      const composerInstance = new Composer(composerData, this.context.data, this.nameMapping);
       this.#parserComponentYaml(composerInstance, composerContent.Component);
     }
   }
 
   #parserComponentYaml(composerInstance: Composer, component: string) {
     const componentText = get(this.buildinComponents, component, '') as string;
-
     if (composerInstance.parameters?.PluginClassName && !composerInstance.parameters?.PluginClassId) {
       const plugin = plugins.find(
         v => v.name === composerInstance.parameters.PluginClassName ||
@@ -165,12 +175,13 @@ Resources:`,
       }
     }
 
-    const contextData = { Parameters: { ...this.context.data.Parameters, ...composerInstance.parameters }};
+    const contextData = { Parameters: { ...this.context.data.Parameters, ...composerInstance.parameters } };
     const globalData = { ...this.buildinHelpers, ...this.nameMapping };
     let self = this;
 
     const componentYaml = core.render(componentText, contextData, globalData, {
-      formatToken: (token: string) => addContextPrefix(token, this.nameMapping)
+      formatToken: (token: string) => addContextPrefix(token, this.nameMapping),
+      mergeView: this.#mergePluginClassId
     });
 
     let r = componentYaml;
@@ -180,7 +191,7 @@ Resources:`,
     const a = jsYaml.load(componentYaml) as Record<string, any>;
     const z = removeNullValues(a);
     for (const [name, value] of Object.entries(z)) {
-      self.nameMapping[composerInstance.name][name] = `${composerInstance.name}${name}`
+      self.nameMapping[composerInstance.name][name] = `${composerInstance.name}${name}`;
       const data = {
         name,
         parent: composerInstance,
@@ -230,7 +241,7 @@ Resources:`,
         dependsOn: msa.DependsOn,
         componentName: msa.Component,
       }
-      const composerInstance = new Composer(data, this.globalData);
+      const composerInstance = new Composer(data, this.globalData, this.nameMapping);
 
       const template = get(this.buildinComponents, value, '') as string;
       let t = template;

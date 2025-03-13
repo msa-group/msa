@@ -27,27 +27,21 @@ class Component {
     this.composerName = data.parent.name;
     this.mergedName = mergeName(data.parent.name, this.name);
     this.props = { ...(json.Properties || {}), ...data.props };
+
     this.parameters = {
       ...(data.parameters || {}),
     };
     this.json = json;
-    this.dependsOn = [
-      ...toNotEmptyArray(data.parent.dependsOn),
-      ...toNotEmptyArray(data.dependsOn),
-    ].map(dep => {
-      const isNormalName = dep.split('.').length === 1;
-      let name = get(data.nameMapping, dep);
-      if (typeof name === "object") {
-        name = [...new Set(Object.values(name).filter(Boolean))];
-      }
-      if (!name) {
-        name = get(data.nameMapping[data.parent.name], dep);
-        if (typeof name === "object") {
-          name = [...new Set(Object.values(name).filter(Boolean))];
-        }
-      }
-      return name ? name : isNormalName ? dep : undefined;
+    // __Empty 表示没有依赖, 但需要为其加上 MsaResource 资源的依赖
+    const deps = toNotEmptyArray(data.dependsOn || "__Empty").map(dep => {
+      const depKey = `${data.parent.name}.${dep}`;
+      const componentNameMap = data.nameMapping[data.parent.name];
+      const primaryDep = componentNameMap.__resource__;
+      const curDep = get(componentNameMap, depKey);
+      return data?.json?.MsaResource ? [curDep] : [primaryDep, curDep];
     }).flat(1).filter(Boolean);
+
+    this.dependsOn = [...data.parent.dependsOn, ...deps];
 
     this.localJson = data.localJson;
     this.templateNameMapToMergedName = data.nameMapping[data.parent.name] || {};
