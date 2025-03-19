@@ -9,9 +9,11 @@ class Composer {
   parameters: Record<string, any>;
   operation?: Record<string, any>;
   componentName: string;
+  existed?: boolean;
 
   constructor(data: ComposerData, global: GlobalData, nameMapping: Record<string, Record<string, string>>) {
     const localParameters = get(global, `Parameters.${data.name}`, {});
+    this.existed = data.existed;
     this.name = data.name;
     this.props = data.props || {};
     this.operation = data.operation;

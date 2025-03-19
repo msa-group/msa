@@ -12,12 +12,9 @@ function defaultFormatToken(token: string) {
   return token;
 }
 
-
 function isFunction(object) {
-  return typeof object === 'function';
+  return typeof object === "function";
 }
-
-
 
 const regExpTest = RegExp.prototype.test;
 function testRegExp(re, string) {
@@ -30,18 +27,17 @@ function isWhitespace(string) {
 }
 
 function escapeRegExp(string) {
-  return string.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&');
+  return string.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&");
 }
 
 function squashTokens(tokens) {
-
   const squashedTokens = [];
 
   let token, lastToken;
   for (let i = 0, numTokens = tokens.length; i < numTokens; ++i) {
     token = tokens[i];
     if (token) {
-      if (token[0] === 'text' && lastToken && lastToken[0] === 'text') {
+      if (token[0] === "text" && lastToken && lastToken[0] === "text") {
         lastToken[1] += token[1];
         lastToken[3] = token[3];
       } else {
@@ -64,18 +60,19 @@ function nestTokens(tokens) {
     token = tokens[i];
 
     switch (token[0]) {
-      case '#':
-      case '^':
-      case '&':
-      case '!':
+      case "#":
+      case "^":
+      case "&":
+      case "!":
         collector.push(token);
         sections.push(token);
         collector = token[4] = [];
         break;
-      case '/':
+      case "/":
         section = sections.pop();
         section[5] = token[2];
-        collector = sections.length > 0 ? sections[sections.length - 1][4] : nestedTokens;
+        collector =
+          sections.length > 0 ? sections[sections.length - 1][4] : nestedTokens;
         break;
       default:
         collector.push(token);
@@ -94,7 +91,7 @@ function parseTemplate(template, tags) {
   let spaces = [];
   let hasTag = false;
   let nonSpace = false;
-  let indentation = '';
+  let indentation = "";
   let tagIndex = 0;
 
   function stripSpace() {
@@ -111,17 +108,17 @@ function parseTemplate(template, tags) {
 
   let openingTagRe, closingTagRe, closingCurlyRe;
   function compileTags(tagsToCompile) {
-    if (typeof tagsToCompile === 'string') {
+    if (typeof tagsToCompile === "string") {
       tagsToCompile = tagsToCompile.split(spaceRe, 2);
     }
 
     if (!Array.isArray(tagsToCompile) || tagsToCompile.length !== 2) {
-      throw new Error('Invalid tags: ' + tagsToCompile);
+      throw new Error("Invalid tags: " + tagsToCompile);
     }
 
-    openingTagRe = new RegExp(escapeRegExp(tagsToCompile[0]) + '\\s*');
-    closingTagRe = new RegExp('\\s*' + escapeRegExp(tagsToCompile[1]));
-    closingCurlyRe = new RegExp('\\s*' + escapeRegExp('}' + tagsToCompile[1]));
+    openingTagRe = new RegExp(escapeRegExp(tagsToCompile[0]) + "\\s*");
+    closingTagRe = new RegExp("\\s*" + escapeRegExp(tagsToCompile[1]));
+    closingCurlyRe = new RegExp("\\s*" + escapeRegExp("}" + tagsToCompile[1]));
   }
 
   compileTags(tags || buildin.tags);
@@ -145,15 +142,15 @@ function parseTemplate(template, tags) {
         } else {
           nonSpace = true;
           lineHasNonSpace = true;
-          indentation += ' ';
+          indentation += " ";
         }
 
-        tokens.push(['text', chr, start, start + 1])
+        tokens.push(["text", chr, start, start + 1]);
         start += 1;
 
-        if (chr === '\n') {
+        if (chr === "\n") {
           stripSpace();
-          indentation = '';
+          indentation = "";
           tagIndex = 0;
           lineHasNonSpace = false;
         }
@@ -163,28 +160,36 @@ function parseTemplate(template, tags) {
     if (!scanner.scan(openingTagRe)) break;
 
     hasTag = true;
-    type = scanner.scan(tagRe) || 'name';
+    type = scanner.scan(tagRe) || "name";
     scanner.scan(whiteRe);
 
-    if (type === '=') {
+    if (type === "=") {
       value = scanner.scanUntil(equalsRe);
       scanner.scan(equalsRe);
       scanner.scanUntil(closingTagRe);
-    } else if (type === '{') {
+    } else if (type === "{") {
       value = scanner.scanUntil(closingCurlyRe);
       scanner.scan(curlyRe);
       scanner.scanUntil(closingTagRe);
-      type = '&';
+      type = "&";
     } else {
       value = scanner.scanUntil(closingTagRe);
     }
 
     if (!scanner.scan(closingTagRe)) {
-      throw new Error('Unclosed tag at ' + scanner.pos);
+      throw new Error("Unclosed tag at " + scanner.pos);
     }
 
     if (type === ">") {
-      token = [type, value, start, scanner.pos, indentation, tagIndex, lineHasNonSpace];
+      token = [
+        type,
+        value,
+        start,
+        scanner.pos,
+        indentation,
+        tagIndex,
+        lineHasNonSpace,
+      ];
     } else {
       token = [type, value, start, scanner.pos];
     }
@@ -192,9 +197,9 @@ function parseTemplate(template, tags) {
     tagIndex++;
     tokens.push(token);
 
-    if (type === '#' || type === '^' || type === '&' || type === '!') {
+    if (type === "#" || type === "^" || type === "&" || type === "!") {
       sections.push(token);
-    } else if (type === '/') {
+    } else if (type === "/") {
       openSection = sections.pop();
       if (!openSection) {
         throw new Error("Unopened section " + value + " at " + start);
@@ -203,9 +208,9 @@ function parseTemplate(template, tags) {
       // if (openSection[1] !== value) {
       //   throw new Error("Unclosed section " + openSection[1] + " at " + start);
       // }
-    } else if (type === 'name' || type === '{') {
+    } else if (type === "name" || type === "{") {
       nonSpace = true;
-    } else if (type === '=') {
+    } else if (type === "=") {
       compileTags(value);
     }
   }
@@ -214,9 +219,7 @@ function parseTemplate(template, tags) {
 
   openSection = sections.pop();
 
-
   return nestTokens(squashTokens(tokens));
-
 }
 
 class Scanner {
@@ -230,19 +233,20 @@ class Scanner {
   }
 
   eos() {
-    return this.tail === '';
+    return this.tail === "";
   }
 
   scanUntil(re) {
-    let index = this.tail.search(re), match;
+    let index = this.tail.search(re),
+      match;
 
     switch (index) {
       case -1:
         match = this.tail;
-        this.tail = '';
+        this.tail = "";
         break;
       case 0:
-        match = '';
+        match = "";
         break;
       default:
         match = this.tail.substring(0, index);
@@ -258,7 +262,7 @@ class Scanner {
     const match = this.tail.match(re);
 
     if (!match || match.index !== 0) {
-      return '';
+      return "";
     }
 
     let string = match[0];
@@ -284,27 +288,25 @@ class Write {
       },
       clear: function () {
         this._cache = {};
-      }
-    }
+      },
+    };
     this.contextView = {};
   }
-
 
   getConfigTags(config) {
     if (Array.isArray(config)) {
       return config;
-    } else if (config && typeof config === 'object') {
+    } else if (config && typeof config === "object") {
       return config.tags;
-    }
-    else {
+    } else {
       return undefined;
     }
   }
 
   parse(template, tags) {
     const cache = this.templateCache;
-    const cacheKey = template + ":" + (tags || buildin.tags).join(':');
-    const isCacheEnabled = typeof cache !== 'undefined';
+    const cacheKey = template + ":" + (tags || buildin.tags).join(":");
+    const isCacheEnabled = typeof cache !== "undefined";
     let tokens = isCacheEnabled ? cache.get(cacheKey) : undefined;
     if (tokens === undefined) {
       tokens = parseTemplate(template, tags);
@@ -317,34 +319,57 @@ class Write {
     const tags = this.getConfigTags(config);
     const tokens = this.parse(template, tags);
     this.contextView = view;
-    const context = (view instanceof Context) ? view : new Context(view, globalView, undefined, undefined, config?.formatToken || defaultFormatToken, config?.mergeView);
+    const context =
+      view instanceof Context
+        ? view
+        : new Context(
+            view,
+            globalView,
+            undefined,
+            undefined,
+            config?.formatToken || defaultFormatToken,
+            config?.mergeView,
+          );
     return this.renderTokens(tokens, context, undefined, template, config);
   }
 
   renderTokens(tokens, context, partials, originalTemplate, config) {
-    let buffer = '';
+    let buffer = "";
 
     let token, symbol, value;
     for (let i = 0, numTokens = tokens.length; i < numTokens; ++i) {
       value = undefined;
       token = tokens[i];
       symbol = token[0];
-      if (symbol === '#') {
-        value = this.renderSection(token, context, partials, originalTemplate, config);
-      }
-      else if (symbol === '^' || symbol === '!') {
-        value = this.renderInverted(token, context, partials, originalTemplate, config);
-      }
-      else if (symbol === '>') {
+      if (symbol === "#") {
+        value = this.renderSection(
+          token,
+          context,
+          partials,
+          originalTemplate,
+          config,
+        );
+      } else if (symbol === "^" || symbol === "!") {
+        value = this.renderInverted(
+          token,
+          context,
+          partials,
+          originalTemplate,
+          config,
+        );
+      } else if (symbol === ">") {
         value = this.renderPartial(token, context, partials, config);
-      }
-      else if (symbol === '&') {
-        value = this.unescapedValue(token, context, partials, originalTemplate, config);
-      }
-      else if (symbol === 'name') {
+      } else if (symbol === "&") {
+        value = this.unescapedValue(
+          token,
+          context,
+          partials,
+          originalTemplate,
+          config,
+        );
+      } else if (symbol === "name") {
         value = this.escapedValue(token, context, config);
-      }
-      else if (symbol === 'text') {
+      } else if (symbol === "text") {
         value = this.rawValue(token);
       }
 
@@ -357,14 +382,14 @@ class Write {
   }
 
   indentPartial(partial, indentation, lineHasNonSpace) {
-    const filteredIndentation = indentation.replace(/[^ \t]/g, '');
-    const partialByNl = partial.split('\n');
+    const filteredIndentation = indentation.replace(/[^ \t]/g, "");
+    const partialByNl = partial.split("\n");
     for (let i = 0; i < partialByNl.length; i++) {
       if (partialByNl[i].length && (i > 0 || !lineHasNonSpace)) {
         partialByNl[i] = filteredIndentation + partialByNl[i];
       }
     }
-    return partialByNl.join('\n');
+    return partialByNl.join("\n");
   }
 
   rawValue(token) {
@@ -374,14 +399,22 @@ class Write {
   unescapedValue(token, context, partials, originalTemplate, config) {
     const value = context.lookup(token[1]);
     if (value != null && value !== false) {
-      return this.renderTokens(token[4], context, partials, originalTemplate, config);
+      return this.renderTokens(
+        token[4],
+        context,
+        partials,
+        originalTemplate,
+        config,
+      );
     }
   }
 
   renderPartial(token, context, partials, config) {
     if (!partials) return;
     const tags = this.getConfigTags(config);
-    const value = isFunction(partials) ? partials(token[1]) : partials[token[1]];
+    const value = isFunction(partials)
+      ? partials(token[1])
+      : partials[token[1]];
     if (value != null) {
       const lineHasNonSpace = token[6];
       const tagIndex = token[5];
@@ -391,20 +424,31 @@ class Write {
         indentedValue = this.indentPartial(value, indentation, lineHasNonSpace);
       }
       const tokens = this.parse(indentedValue, tags);
-      return this.renderTokens(tokens, context, partials, indentedValue, config);
+      return this.renderTokens(
+        tokens,
+        context,
+        partials,
+        indentedValue,
+        config,
+      );
     }
-
   }
 
   renderInverted(token, context, partials, originalTemplate, config) {
     const value = context.lookup(token[1]);
     if (!value || (Array.isArray(value) && value.length === 0)) {
-      return this.renderTokens(token[4], context, partials, originalTemplate, config);
+      return this.renderTokens(
+        token[4],
+        context,
+        partials,
+        originalTemplate,
+        config,
+      );
     }
   }
 
   renderSection(token, context, partials, originalTemplate, config) {
-    let buffer = '';
+    let buffer = "";
     // TODO: 需要优化
     let value = JSON.parse(context.lookup(token[1]));
 
@@ -412,32 +456,53 @@ class Write {
 
     if (Array.isArray(value)) {
       for (let j = 0, valueLength = value.length; j < valueLength; ++j) {
-        buffer += this.renderTokens(token[4], context.push(value[j], undefined, j), partials, originalTemplate, config);
+        buffer += this.renderTokens(
+          token[4],
+          context.push(value[j], undefined, j),
+          partials,
+          originalTemplate,
+          config,
+        );
       }
-    } else if (typeof value === 'object' || typeof value === 'string' || typeof value === 'number') {
-      buffer += this.renderTokens(token[4], context.push(value), partials, originalTemplate, config);
+    } else if (
+      typeof value === "object" ||
+      typeof value === "string" ||
+      typeof value === "number"
+    ) {
+      buffer += this.renderTokens(
+        token[4],
+        context.push(value),
+        partials,
+        originalTemplate,
+        config,
+      );
     } else {
-      buffer += this.renderTokens(token[4], context, partials, originalTemplate, config);
+      buffer += this.renderTokens(
+        token[4],
+        context,
+        partials,
+        originalTemplate,
+        config,
+      );
     }
 
     return buffer;
-
   }
-
 
   escapedValue(token, context, config) {
     const escape = this.getConfigEscape(config) || buildin.escape;
     const value = context.lookup(token[1]);
     if (value != null) {
-      return (typeof value === 'number' && escape === buildin.escape) ? String(value) : escape(value);
+      return typeof value === "number" && escape === buildin.escape
+        ? String(value)
+        : escape(value);
     }
   }
 
   getConfigEscape(config) {
-    if (config && typeof config === 'object' && !Array.isArray(config)) {
+    if (config && typeof config === "object" && !Array.isArray(config)) {
       return config.escape;
-    }
-    else {
+    } else {
       return undefined;
     }
   }
@@ -450,22 +515,37 @@ class Context {
   globalView: Record<string, any>;
   formatToken: (token: string) => string;
   mergeView?: (data: any) => any;
-  constructor(view, globalView, parentContext, index, formatToken, mergeView?: (data: any) => any) {
-    const mergedView = mergeView ? mergeView(view) : view 
-    this.view = parentContext ? {
-      ...parentContext.view,
-      $item: mergedView || {},
-      $parent: parentContext.view,
-      $index: index,
-    } : mergedView
+  constructor(
+    view,
+    globalView,
+    parentContext,
+    index,
+    formatToken,
+    mergeView?: (data: any) => any,
+  ) {
+    const mergedView = mergeView ? mergeView(view) : view;
+    this.view = parentContext
+      ? {
+          ...parentContext.view,
+          $item: mergedView || {},
+          $parent: parentContext.view,
+          $index: index,
+        }
+      : mergedView;
     this.parent = parentContext;
-    this.cache = { '.': this.view };
+    this.cache = { ".": this.view };
     this.globalView = globalView;
     this.formatToken = formatToken;
     this.mergeView = mergeView;
   }
 
-  push(view, globalView = this.globalView, index, formatToken = this.formatToken, mergedView = this.mergeView) {
+  push(
+    view,
+    globalView = this.globalView,
+    index,
+    formatToken = this.formatToken,
+    mergedView = this.mergeView,
+  ) {
     return new Context(view, globalView, this, index, formatToken, mergedView);
   }
 
@@ -478,43 +558,55 @@ class Context {
       let context = this;
       while (context) {
         const functionCallString = this.formatToken(name);
-        const contextWithGlobal = { ...context.view, __Global__: this.globalView }
+        const contextWithGlobal = {
+          ...context.view,
+          __Global__: this.globalView,
+        };
 
-        const func = new Function('context', ` { return ${functionCallString} }`);
+        const func = new Function(
+          "context",
+          `try { return ${functionCallString} } catch(error) { return null }`,
+        );
         value = UtilsHelper.JSONStringify(func(contextWithGlobal));
-        // console.log('lookup', value, typeof value);
-
         context = null;
       }
       cache[name] = value;
     }
 
-    if (isFunction(value))
-      value = value.call(this.view);
+    if (isFunction(value)) value = value.call(this.view);
 
     return value;
   }
 }
 
 const buildin = {
-  tags: ['{{', '}}'],
+  tags: ["{{", "}}"],
   escape: (a) => a,
-}
+};
 
 const write = new Write();
 
 interface Core {
-  render: (template: string, view: Record<string, any>, globalView: Record<string, any>, config?: {
-    formatToken?: (token: string) => string;
-    mergeView?: (data: any) => any;
-  }) => string;
+  render: (
+    template: string,
+    view: Record<string, any>,
+    globalView: Record<string, any>,
+    config?: {
+      formatToken?: (token: string) => string;
+      mergeView?: (data: any) => any;
+    },
+  ) => string;
 }
 
 const core: Core = {
-  render: (template: string, view: Record<string, any>, globalView: Record<string, any>, config?: Record<string, any>) => {
-    return write.render(template, view, globalView, config)
+  render: (
+    template: string,
+    view: Record<string, any>,
+    globalView: Record<string, any>,
+    config?: Record<string, any>,
+  ) => {
+    return write.render(template, view, globalView, config);
   },
-}
+};
 
 export default core;
-

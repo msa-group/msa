@@ -254,7 +254,7 @@ HttpTrigger:
 
 ### [{{Default}}](buildin/utils.ts)
 获取默认值
-**参数**：`a`、`b`  
+**参数**：`a`、`b`
 
 * `a` **{unknown}**
 * `b` **{unknown}**
@@ -279,10 +279,12 @@ HttpTrigger:
 ## ros
 
 ### [{{RosOutput}}](buildin/ros.ts)
-将参数转为 Ros 的 Fn::GetAtt 格式
-**参数**：`...params`
+将参数转为 Ros 的 Fn::GetAtt 格式, 如果有 value ， 则直接返回 value
+**参数**：`resourceName`、`field`、`value`
 
-* `...params` **{unknown[]}**
+* `resourceName` **{string}**
+* `field` **{string}**
+* `value` **{any}** 默认值为 `undefined`
 * `returns` **{string}**: 返回值，返回 JSON 字符串
 
 **Example**
@@ -341,7 +343,7 @@ Fn::Sub:
 
 ```yaml
 {{RosArray(["test1", "test2"])}}
-``` 
+```
 
 **输出**
 
@@ -364,7 +366,7 @@ Fn::Sub:
 
 ```yaml
 {{RosEnvs({env1: value1, env2: value2})}}
-``` 
+```
 
 **输出**
 

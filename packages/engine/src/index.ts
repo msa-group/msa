@@ -1,22 +1,26 @@
 import jsYaml from "js-yaml";
 import { get } from "lodash";
 import ParseEngine from "./parseEngine";
-import ParserRules from "./parserRules";
 import {
-  mergeName, removeNullValues,
-  sortByDependsOn, addContextPrefix
+  mergeName,
+  removeNullValues,
+  sortByDependsOn,
+  addContextPrefix,
 } from "./utils";
-import { getBuildInHelper } from './buildin-helper';
+import { getBuildInHelper } from "./buildin-helper";
 import Composer from "./composer";
 import Component from "./component";
 import plugins from "./plugins";
 import core from "./parser/core";
 
-import type { Composor, EngineContext, GlobalData, ParseOptions } from "./types";
+import type {
+  Composor,
+  EngineContext,
+  GlobalData,
+  ParseOptions,
+} from "./types";
 
 class Engine {
-
-  private rules: ParserRules;
   private context: EngineContext;
   private buildinHelpers: Record<string, any> = {};
   private registeredHelper: Record<string, any> = {};
@@ -27,7 +31,6 @@ class Engine {
   private buildinComponents: Record<string, any> = {};
 
   constructor() {
-    this.rules = new ParserRules();
     this.init();
   }
 
@@ -58,7 +61,7 @@ class Engine {
 Resources:`,
 
       serviceJson: {},
-    }
+    };
   }
 
   registerHelper<T>(helpers: { [key: string]: T }) {
@@ -66,26 +69,26 @@ Resources:`,
     this.registeredHelper = helpers;
   }
 
-  parse(str: string, parameters: Record<string, any> = {}, options: ParseOptions)
-    : Promise<ParseEngine> {
+  parse(
+    str: string,
+    parameters: Record<string, any> = {},
+    options: ParseOptions,
+  ): Promise<ParseEngine> {
     if (!options.components) {
-      return Promise.reject(new Error('components is required'));
+      return Promise.reject(new Error("components is required"));
     }
     this.init();
     const buildinHelpersInst = getBuildInHelper();
-    this.buildinHelpers = { ...buildinHelpersInst, ...this.registeredHelper }
-    this.buildinComponents = get(options, 'components', {});
+    this.buildinHelpers = { ...buildinHelpersInst, ...this.registeredHelper };
+    this.buildinComponents = get(options, "components", {});
     return new Promise(async (resolve) => {
       try {
         await this.#parserNameMapping(str, { parameters });
-        // this.nameMapping = proxyNameMapping(this.nameMapping);
         this.#parserMainYaml(str, { parameters });
         const parseEngine = new ParseEngine(this.context, this.nameMapping);
         resolve(parseEngine);
-        // console.log()
-        // resolve(this.context.resultYamlString)
       } catch (error) {
-        console.log(error)
+        console.log(error);
       }
     });
   }
@@ -93,60 +96,63 @@ Resources:`,
   #mergePluginClassId(data: any) {
     if (data.PluginClassName && !data.PluginClassId) {
       data.PluginClassId = plugins.find(
-        v => v.name === data.PluginClassName ||
-          v.alias === data.PluginClassName
+        (v) =>
+          v.name === data.PluginClassName || v.alias === data.PluginClassName,
       )?.id;
     }
     return data;
   }
 
-  async #parserNameMapping(text: string, config: { parameters: Record<string, any> }) {
-
-    const globalParameters = get(config, 'parameters.Global', {});
-    const inLocalParameters = get(config, 'parameters.Parameters', {});
+  async #parserNameMapping(
+    text: string,
+    config: { parameters: Record<string, any> },
+  ) {
+    const globalParameters = get(config, "parameters.Global", {});
+    const inLocalParameters = get(config, "parameters.Parameters", {});
     const contextData = {
       Parameters: {
         ...globalParameters,
         ...inLocalParameters,
       },
-      ...this.buildinHelpers,
-    }
+    };
     this.context.data = {
       ...this.context.data,
       ...contextData,
-    }
+    };
+    const globalData = { ...this.buildinHelpers };
 
-    const a = this.rules.preparsRules[0].replace(text);
-    const b = jsYaml.load(a).Composer || {};
-    const keys = Object.keys(b);
-
-    let preparedText = this.rules.rule.C.replace(text, contextData, undefined, undefined, undefined, keys);
-    for (const rule of this.rules.preparsRules) {
-      preparedText = rule.replace(preparedText);
-    }
-    const composerJson = jsYaml.load(preparedText);
+    const composerYaml = core.render(text, contextData, globalData, {
+      formatToken: addContextPrefix,
+    });
+    const composerJson = jsYaml.load(composerYaml);
     // this.context.templateText.main = preparedText;
     this.#analyzeTemplate(composerJson);
     this.#parseSubTemplate(composerJson);
-
   }
 
-
-  async #parserMainYaml(str, parameters: any) {
+  async #parserMainYaml(str: string, parameters: any) {
     const params = {
-      ...get(parameters, 'parameters.Global', {}),
-      ...get(parameters, 'parameters.Parameters', {}),
-    }
+      ...get(parameters, "parameters.Global", {}),
+      ...get(parameters, "parameters.Parameters", {}),
+    };
     Object.assign(this.context.data.Parameters, params);
 
     const globalData = { ...this.buildinHelpers, ...this.nameMapping };
-    const msaYaml = core.render(str, { Parameters: this.context.data.Parameters }, globalData, {
-      formatToken: (token: string) => addContextPrefix(token, this.nameMapping),
-      mergeView: this.#mergePluginClassId
-    });
+    const msaYaml = core.render(
+      str,
+      { Parameters: this.context.data.Parameters },
+      globalData,
+      {
+        formatToken: (token: string) =>
+          addContextPrefix(token, this.nameMapping),
+        mergeView: this.#mergePluginClassId,
+      },
+    );
     const composerJson = jsYaml.load(msaYaml);
     this.context.templateJson.main = composerJson;
-    const sortedByDependsOn = sortByDependsOn(Object.entries(composerJson.Composer || {}));
+    const sortedByDependsOn = sortByDependsOn(
+      Object.entries(composerJson.Composer || {}),
+    );
     for (const [composerKey, composerContent] of sortedByDependsOn) {
       const composerData = {
         name: composerKey,
@@ -157,41 +163,56 @@ Resources:`,
         props: composerContent.Properties,
         dependsOn: composerContent.DependsOn,
         componentName: composerContent.Component,
-      }
-      const composerInstance = new Composer(composerData, this.context.data, this.nameMapping);
+        existed: composerContent.Existed,
+      };
+      const composerInstance = new Composer(
+        composerData,
+        this.context.data,
+        this.nameMapping,
+      );
       this.#parserComponentYaml(composerInstance, composerContent.Component);
     }
   }
 
   #parserComponentYaml(composerInstance: Composer, component: string) {
-    const componentText = get(this.buildinComponents, component, '') as string;
-    if (composerInstance.parameters?.PluginClassName && !composerInstance.parameters?.PluginClassId) {
+    const componentText = get(this.buildinComponents, component, "") as string;
+    if (
+      composerInstance.parameters?.PluginClassName &&
+      !composerInstance.parameters?.PluginClassId
+    ) {
       const plugin = plugins.find(
-        v => v.name === composerInstance.parameters.PluginClassName ||
-          v.alias === composerInstance.parameters.PluginClassName
+        (v) =>
+          v.name === composerInstance.parameters.PluginClassName ||
+          v.alias === composerInstance.parameters.PluginClassName,
       );
       if (plugin) {
         composerInstance.parameters.PluginClassId = plugin.id;
       }
     }
 
-    const contextData = { Parameters: { ...this.context.data.Parameters, ...composerInstance.parameters } };
+    const contextData = {
+      Parameters: {
+        ...this.context.data.Parameters,
+        ...composerInstance.parameters,
+      },
+    };
     const globalData = { ...this.buildinHelpers, ...this.nameMapping };
     let self = this;
 
     const componentYaml = core.render(componentText, contextData, globalData, {
       formatToken: (token: string) => addContextPrefix(token, this.nameMapping),
-      mergeView: this.#mergePluginClassId
+      mergeView: this.#mergePluginClassId,
     });
 
     let r = componentYaml;
 
     // TODO: 命名需要优化
-    let h = '';
+    let h = "";
     const a = jsYaml.load(componentYaml) as Record<string, any>;
     const z = removeNullValues(a);
     for (const [name, value] of Object.entries(z)) {
-      self.nameMapping[composerInstance.name][name] = `${composerInstance.name}${name}`;
+      self.nameMapping[composerInstance.name][name] =
+        `${composerInstance.name}${name}`;
       const data = {
         name,
         parent: composerInstance,
@@ -203,10 +224,14 @@ Resources:`,
         nameMapping: self.nameMapping,
         deletedMergedName: self.deletedMergedName,
         mergedNames: self.mergedNames,
-      }
+        existed: composerInstance.existed,
+      };
       const componentInstance = new Component(data);
-      this.context.fullComponent[componentInstance.mergedName] = componentInstance;
-      h = h + componentInstance.toYaml()[componentInstance.mergedName]
+      this.context.fullComponent[componentInstance.mergedName] =
+        componentInstance;
+      if (!composerInstance.existed) {
+        h = h + componentInstance.toYaml()[componentInstance.mergedName];
+      }
     }
     r = h;
 
@@ -215,14 +240,14 @@ Resources:`,
     const g = jsYaml.dump(k);
 
     const indentedYamlText = g
-      .split('\n')
-      .map((line, index) => index === 0 ? line : `  ${line}`)
-      .join('\n');
+      .split("\n")
+      .map((line, index) => (index === 0 ? line : `  ${line}`))
+      .join("\n");
     this.context.resultYamlString += `\n  ${indentedYamlText}\n`;
   }
 
   #analyzeTemplate(composerJson) {
-    const composer = composerJson.Composer as Composor
+    const composer = composerJson.Composer as Composor;
     if (!composer) return {};
     for (const [key, value] of Object.entries(composer)) {
       this.context.templateText.dependencies[key] = value.Component;
@@ -240,52 +265,56 @@ Resources:`,
         props: msa.Properties,
         dependsOn: msa.DependsOn,
         componentName: msa.Component,
-      }
-      const composerInstance = new Composer(data, this.globalData, this.nameMapping);
+      };
+      const composerInstance = new Composer(
+        data,
+        this.globalData,
+        this.nameMapping,
+      );
 
-      const template = get(this.buildinComponents, value, '') as string;
+      const template = get(this.buildinComponents, value, "") as string;
       let t = template;
 
-
-      const contextData = { Parameters: { ...this.context.data.Parameter, ...composerInstance.parameters } }
+      const contextData = {
+        Parameters: {
+          ...this.context.data.Parameter,
+          ...composerInstance.parameters,
+        },
+      };
       const parsedText = core.render(t, contextData, this.buildinHelpers, {
-        formatToken: addContextPrefix
+        formatToken: addContextPrefix,
       });
 
       const componentJson = jsYaml.load(parsedText) as Record<string, any>;
 
       for (const [componentKey, value] of Object.entries(componentJson)) {
-
         const component = {
           name: componentKey,
           mergedName: mergeName(key, componentKey),
           isResource: value.MsaResource,
-        }
+        };
 
         if (this.nameMapping[composerInstance.name]) {
-          this.nameMapping[composerInstance.name][component.name] = component.mergedName;
+          this.nameMapping[composerInstance.name][component.name] =
+            component.mergedName;
           if (component.isResource) {
             // __resource__ 标记该资源为主资源
-            this.nameMapping[composerInstance.name]['__resource__'] = component.mergedName;
+            this.nameMapping[composerInstance.name]["__resource__"] =
+              component.mergedName;
           }
         } else {
           this.nameMapping[composerInstance.name] = {
             [component.name]: component.mergedName,
-          }
+          };
           if (component.isResource) {
-
-            this.nameMapping[composerInstance.name]['__resource__'] = component.mergedName;
+            this.nameMapping[composerInstance.name]["__resource__"] =
+              component.mergedName;
           }
         }
         this.mergedNames.add(mergeName(composerInstance.name, component.name));
       }
     }
-
   }
-
-
 }
-
-
 
 export default Engine;

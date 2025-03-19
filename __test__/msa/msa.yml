@@ -2,6 +2,7 @@
 Composer:
   Backend:
     Component: fc3
+    Existed: {{IsNotEmpty(Get(Parameters, "Service.ServiceId"))}}
     Parameters:
       Name: {{Default(Get(Parameters, 'Backend.BackendName'), Subfix(Parameters.Name))}}
       CustomContainerConfig:
@@ -10,9 +11,10 @@ Composer:
           - Region: {{Parameters.Region}}
       EnvironmentVariables: '{"CUSTOM_MODELS":"-all,+gpt-3.5-turbo@OpenAI,+gpt-4o@OpenAI,+gpt-4@OpenAI,+gpt-4-turbo@OpenAI,+qwen-max@OpenAI,+qwen-turbo@OpenAI,+qwen-plus@OpenAI", "OPENAI_API_KEY": "unused", "DEFAULT_MODEL":"qwen-max"}'
       Timeout: 60
-  
+
   Service:
     DependsOn: Backend
+    Existed: {{IsNotEmpty(Get(Parameters, "Service.ServiceId"))}}
     Component: apig.service
     Parameters:
       Name: {{Default(Get(Parameters, 'Service.Name'), Subfix(Parameters.Name))}}
@@ -21,25 +23,26 @@ Composer:
         Port: 80
 
   LLMSvc:
+    Existed: {{IsNotEmpty(Get(Parameters, "LLMSvc.ServiceId"))}}
     Component: apig.service
     Parameters:
       Name: {{Default(Get(Parameters, 'LLMSvc.Name'), Subfix('dashscope-svc'))}}
       DnsConfig:
         AddressesName: dashscope.aliyuncs.com
         Port: 443
-  
+
   HttpApi:
     Component: apig.http
     Parameters:
       Name: {{Default(Get(Parameters, 'HttpApi.Name'), Subfix(Join([Parameters.Name, 'http'])))}}
       Routes:
         - Name: {{Default(Get(Parameters, 'HttpApi.RouteNames[0]'), 'index')}}
-          Path: 
+          Path:
             Type: Prefix
             Value: '/'
           Scene: SingleService
           Services:
-            - ServiceId: {{RosOutput(Service, "ServiceId")}}
+            - ServiceId: {{RosOutput(Service, "ServiceId", Get(Parameters, 'Service.ServiceId'))}}
               Protocol: HTTP
               Weight: 100
           Policies:
@@ -49,14 +52,14 @@ Composer:
                   - '{"pathType":"Prefix","host":"${HOST}","enable":true}'
                   - HOST: {{RosOutputHostName(Backend.HttpTrigger, "UrlIntranet")}}
         - Name: {{Default(Get(Parameters, 'HttpApi.RouteNames[1]'), 'dashscope')}}
-          Path: 
+          Path:
             Type: Prefix
             Value: '/v1'
           Methods:
             - POST
           Scene: SingleService
           Services:
-            - ServiceId: {{RosOutput(LLMSvc, "ServiceId")}}
+            - ServiceId: {{RosOutput(LLMSvc, "ServiceId", Get(Parameters, 'LLMSvc.ServiceId'))}}
               Protocol: HTTP
               Weight: 100
           Plugins:
@@ -68,4 +71,3 @@ Composer:
                   type: qwen
                   apiTokens:
                     - sk-xxx
-       

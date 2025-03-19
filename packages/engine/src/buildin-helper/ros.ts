@@ -4,18 +4,19 @@ import { toNotEmptyArray } from "../utils";
 
 export const getRosHelper = () => {
   const Ros = {
-    RosOutput: (...params: any[]) => {
+    RosOutput: (resourceName: string, field: string, value?: any) => {
+      if (value) return value;
       const temp = {
-        ['Fn::GetAtt']: toNotEmptyArray(params),
+        ['Fn::GetAtt']: toNotEmptyArray([resourceName, field]),
       };
       return temp;
     },
-    RosOutputHostName: (...params: any[]) => {
+    RosOutputHostName: (resourceName: string, field: string) => {
       const temp = {
         ['Fn::Select']: [
           '1',
           {
-            ['Fn::Split']: ['://', Ros.RosOutput(...params)],
+            ['Fn::Split']: ['://', Ros.RosOutput(resourceName, field)],
           },
         ],
       };
@@ -47,7 +48,7 @@ export const getRosHelper = () => {
           [serviceIds[i]]: item?.['ServiceId'],
         }
       }, {});
-  
+
       const temp = {
         ["Fn::Sub"]: [
           serviceJSONString,
@@ -91,6 +92,6 @@ export const getRosHelper = () => {
   return Ros;
 }
 
-const RosHelper = getRosHelper(); 
+const RosHelper = getRosHelper();
 
 export default RosHelper;

@@ -1,7 +1,6 @@
 import * as jsYaml from "js-yaml";
 import { get } from "lodash";
 import { findKeyBy, mergeName, toArray, toNotEmptyArray } from "./utils";
-import ParserRules from "./parserRules";
 import { keywords } from "./const";
 
 class Component {
@@ -14,7 +13,6 @@ class Component {
   localJson: Record<string, any>;
   templateNameMapToMergedName: Record<string, string>;
   nameMapping: Record<string, Record<string, string>>;
-  parserRules: ParserRules;
   deletedMergedName: Set<string>;
   mergedNames: Set<string>;
   operation: Record<string, any>;
