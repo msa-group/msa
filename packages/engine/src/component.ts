@@ -19,13 +19,14 @@ class Component {
   isResource: boolean;
   componentName: string;
   composerName: string;
+  existedComponents: string[];
   constructor(data) {
     const json = data.json || {};
     this.name = data.name;
     this.composerName = data.parent.name;
     this.mergedName = mergeName(data.parent.name, this.name);
     this.props = { ...(json.Properties || {}), ...data.props };
-
+    this.existedComponents = data.existedComponents || [];
     this.parameters = {
       ...(data.parameters || {}),
     };
@@ -39,7 +40,8 @@ class Component {
       return data?.json?.MsaResource ? [curDep] : [primaryDep, curDep];
     }).flat(1).filter(Boolean);
 
-    this.dependsOn = [...data.parent.dependsOn, ...deps];
+    this.dependsOn = [...data.parent.dependsOn, ...deps]
+      .filter(dep => !this.existedComponents.includes(dep));
 
     this.localJson = data.localJson;
     this.templateNameMapToMergedName = data.nameMapping[data.parent.name] || {};
@@ -84,7 +86,10 @@ class Component {
     })
 
     if (implicitDependsOn.length > 0) {
-      others.DependsOn = [...new Set([...(others.DependsOn || []), ...implicitDependsOn])];
+      others.DependsOn = [...new Set([...(others.DependsOn || []), ...implicitDependsOn])]
+        .filter(
+          dep => !this.existedComponents.includes(dep)
+        );
     }
 
     Object.assign(res, others);

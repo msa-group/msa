@@ -29,6 +29,7 @@ class Engine {
   private deletedMergedName: Set<string> = new Set();
   private mergedNames: Set<string> = new Set();
   private buildinComponents: Record<string, any> = {};
+  private existedComponents: string[] = [];
 
   constructor() {
     this.init();
@@ -39,6 +40,7 @@ class Engine {
     this.deletedMergedName = new Set();
     this.mergedNames = new Set();
     this.buildinComponents = {};
+    this.existedComponents = [];
     this.context = {
       fullComponent: {},
       templateText: {
@@ -225,8 +227,13 @@ Resources:`,
         deletedMergedName: self.deletedMergedName,
         mergedNames: self.mergedNames,
         existed: composerInstance.existed,
+        existedComponents: this.existedComponents,
       };
+
       const componentInstance = new Component(data);
+      if (composerInstance.existed) {
+        this.existedComponents.push(componentInstance.mergedName);
+      }
       this.context.fullComponent[componentInstance.mergedName] =
         componentInstance;
       if (!composerInstance.existed) {
