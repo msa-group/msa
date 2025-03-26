@@ -1,4 +1,5 @@
 ClusterApplication:
+  MsaResource: true
   Type: ALIYUN::CS::ClusterApplication
   Properties:
     {{&Parameters.YamlContent}}
