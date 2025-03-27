@@ -51,7 +51,7 @@ stages:
                 - key: DB_PORT
                   value: 3306
                 - key: SECRET_KEY
-                  value: 
+                  value: 123456
                 - key: DB_HOST
                   value: http://127.0.0.1:12345
                 - key: DB_USERNAME
@@ -61,7 +61,7 @@ stages:
                 - key: REDIS_PASSWORD
                   value: 123456
                 - key: REDIS_USERNAME
-                  value: 
+                  value: root
                 - key: DB_DATABASE
                   value: test
                 - key: DB_PASSWORD
@@ -112,15 +112,15 @@ stages:
                 - key: DIFY_NGINX_IMAGE
                   value: registry.cn-beijing.aliyuncs.com/sae-dev-test/langgenius:nginx
                 - key: NAS_MOUNT_DOMAIN
-                  value: 
+                  value: test.com
                 - key: NAS_ID
-                  value: 
+                  value: 1234567890
                 - key: VPC_ID
-                  value: 
+                  value: 1234567890
                 - key: SECURITY_GROUP_ID
-                  value: 
+                  value: 1234567890
                 - key: VSWITCH_LIST
-                  value: 
+                  value: 1234567890
               namespace: test-namespace-123
               region: cn-beijing
               serviceConnection: http://127.0.0.1:12345
