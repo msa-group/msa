@@ -586,7 +586,7 @@ const buildin = {
 
 const write = new Write();
 
-interface Core {
+export interface Core {
   render: (
     template: string,
     view: Record<string, any>,

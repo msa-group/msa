@@ -1,0 +1,201 @@
+sources:
+  repo_0:
+    type: git
+    name: dify_IsLy
+    endpoint: https://jihulab.com/sae1/dify.git
+    branch: main
+defaultWorkspace: repo_0
+stages:
+  stage_0:
+    name: 新阶段
+    jobs:
+      job_0:
+        name: ConfigMap 配置项发布
+        runsOn:
+          group: public/cn-beijing
+          labels: linux,amd64
+          container: build-steps-public-registry.cn-beijing.cr.aliyuncs.com/build-steps/alinux3:latest
+        steps:
+          step_0:
+            name: Kubectl SAE 发布
+            step: FlowKubectlSae
+            with:
+              variables:
+                - key: NAMESPACE
+                  value: {{NamespaceId}}
+              namespace: {{NamespaceId}}
+              region: {{RegionId}}
+              serviceConnection: {{ServiceConnection}}
+              yamlPath: configmap
+        driven: auto
+        plugins: []
+  stage_1:
+    name: 新阶段
+    jobs:
+      job_0:
+        name: Secret 保密字典发布
+        runsOn:
+          group: public/cn-beijing
+          labels: linux,amd64
+          container: build-steps-public-registry.cn-beijing.cr.aliyuncs.com/build-steps/alinux3:latest
+        steps:
+          step_0:
+            name: Kubectl SAE 发布
+            step: FlowKubectlSae
+            with:
+              variables:
+                - key: NAMESPACE
+                  value: {{NamespaceId}}
+                - key: REDIS_HOST
+                  value: {{RedisHost}}
+                - key: DB_PORT
+                  value: {{DbPort}}
+                - key: SECRET_KEY
+                  value: {{SecretKey}}
+                - key: DB_HOST
+                  value: {{DbHost}}
+                - key: DB_USERNAME
+                  value: {{DbUsername}}
+                - key: REDIS_PORT
+                  value: {{RedisPort}}
+                - key: REDIS_PASSWORD
+                  value: {{RedisPassword}}
+                - key: REDIS_USERNAME
+                  value: {{RedisUsername}}
+                - key: DB_DATABASE
+                  value: {{DbDatabase}}
+                - key: DB_PASSWORD
+                  value: {{DbPassword}}
+                - key: VECTOR_STORE
+                  value: pgvector
+                - key: PGVECTOR_HOST
+                  value: {{PgVectorHost}}
+                - key: PGVECTOR_PORT
+                  value: {{PgVectorPort}}
+                - key: PGVECTOR_USER
+                  value: {{PgVectorUser}}
+                - key: PGVECTOR_PASSWORD
+                  value: {{PgVectorPassword}}
+              namespace: {{NamespaceId}}
+              region: {{RegionId}}
+              serviceConnection: {{ServiceConnection}}
+              yamlPath: secret
+        driven: auto
+        plugins: []
+  stage_2:
+    name: 新阶段
+    jobs:
+      job_0:
+        name: Deployment 应用发布
+        runsOn:
+          group: public/cn-beijing
+          labels: linux,amd64
+          container: build-steps-public-registry.cn-beijing.cr.aliyuncs.com/build-steps/alinux3:latest
+        steps:
+          step_0:
+            name: Kubectl SAE 发布
+            step: FlowKubectlSae
+            with:
+              variables:
+                - key: NAMESPACE
+                  value: {{NamespaceId}}
+                - key: REGION_ID
+                  value: {{RegionId}}
+                - key: ACCOUNT_ID
+                  value: {{AccountId}}
+                - key: DIFY_SANDBOX_IMAGE
+                  value: registry.{{RegionId}}.aliyuncs.com/sae-dev-test/langgenius:dify-sandbox
+                - key: DIFY_WEB_IMAGE
+                  value: registry.{{RegionId}}.aliyuncs.com/sae-dev-test/langgenius:dify-web
+                - key: DIFY_API_IMAGE
+                  value: registry.{{RegionId}}.aliyuncs.com/sae-dev-test/langgenius:dify-api
+                - key: DIFY_NGINX_IMAGE
+                  value: registry.{{RegionId}}.aliyuncs.com/sae-dev-test/langgenius:nginx
+                - key: NAS_MOUNT_DOMAIN
+                  value: {{NasMountDomain}}
+                - key: NAS_ID
+                  value: {{NasId}}
+                - key: VPC_ID
+                  value: {{VpcId}}
+                - key: SECURITY_GROUP_ID
+                  value: {{SecurityGroupId}}
+                - key: VSWITCH_LIST
+                  value: {{VswitchList}}
+              namespace: {{NamespaceId}}
+              region: {{RegionId}}
+              serviceConnection: {{ServiceConnection}}
+              yamlPath: deployment
+          step_1:
+            name: 应用 RUNNING 状态监测
+            step: Command
+            with:
+              variables: []
+              ifGivenShell: true
+              givenExecShell: bash
+              run: "#!/bin/bash\nset -eo pipefail\n\nNAMESPACE=\"{{NamespaceId}}\"\
+                \nMAX_RETRIES=60\nRETRY_DELAY=5\nDEPLOYMENTS=(\"dify-api\" \"dify-worker\"\
+                \ \"dify-sandbox\" \"dify-web\" \"dify-nginx\")\n\ncommand -v kubectl-sae\
+                \ >/dev/null 2>&1 || { \n    echo \"[FATAL] kubectl-sae 命令未找到\" >&2\n\
+                \    exit 127\n}\n\nif ! kubectl-sae get ns \"$NAMESPACE\" -o name\
+                \ >/dev/null 2>&1; then\n    echo \"[FATAL] 命名空间 $NAMESPACE 不存在\"\
+                \ >&2\n    exit 1\nfi\n\ncheck_deployment() {\n    local deployment=$1\n\
+                \    local attempt=0\n    \n    echo \"[INFO] 开始检查部署: $deployment\"\
+                \n    \n    while (( attempt++ < MAX_RETRIES )); do\n        if output=$(kubectl-sae\
+                \ get deployment.apps/\"$deployment\" -n \"$NAMESPACE\" 2>&1); then\n\
+                \            if echo \"$output\" | grep -q \"RUNNING\"; then\n   \
+                \             echo \"[SUCCESS] $deployment 状态正常\"\n              \
+                \  return 0\n            fi\n        else\n            echo \"[ERROR]\
+                \ 获取状态失败: ${output:0:200}...\"\n        fi\n\n        if (( attempt\
+                \ % 5 == 0 )); then\n            echo \"[CHECK] $deployment 检查中 (尝\
+                试次数: $attempt)\"\n        fi\n        \n        sleep $RETRY_DELAY\n\
+                \    done\n\n    echo \"[FATAL] $deployment 未在预期时间内就绪\" >&2\n    exit\
+                \ 1\n}\n\nfor deploy in \"${DEPLOYMENTS[@]}\"; do\n    check_deployment\
+                \ \"$deploy\"\ndone\n\necho \"所有部署检查通过\"\nexit 0\n"
+        driven: auto
+        plugins: []
+  stage_3:
+    name: 新阶段
+    jobs:
+      job_0:
+        name: Service 公网访问发布
+        runsOn:
+          group: public/cn-beijing
+          labels: linux,amd64
+          container: build-steps-public-registry.cn-beijing.cr.aliyuncs.com/build-steps/alinux3:latest
+        steps:
+          step_0:
+            name: Kubectl SAE 发布
+            step: FlowKubectlSae
+            with:
+              variables:
+                - key: NAMESPACE
+                  value: {{NamespaceId}}
+              namespace: {{NamespaceId}}
+              region: {{RegionId}}
+              serviceConnection: {{ServiceConnection}}
+              yamlPath: service
+          step_1:
+            name: 服务就绪状态监测
+            step: Command
+            with:
+              variables: []
+              ifGivenShell: false
+              run: "set -eo pipefail\n\nNAMESPACE=\"{{NamespaceId}}\"\nMAX_RETRIES=60\n\
+                RETRY_DELAY=5\n\ncommand -v kubectl-sae >/dev/null 2>&1 || { \n  \
+                \  echo \"[FATAL] kubectl-sae 命令未找到\" >&2\n    exit 127\n}\n\nif !\
+                \ kubectl-sae get ns \"$NAMESPACE\" -o name >/dev/null 2>&1; then\n\
+                \    echo \"[FATAL] 命名空间 $NAMESPACE 不存在\" >&2\n    exit 1\nfi\n\n\
+                check_deployment() {\n    \n    echo \"[INFO] 开始检查服务: internet-dify-nginx\"\
+                \n    \n    while (( attempt++ < MAX_RETRIES )); do\n        if output=$(kubectl-sae\
+                \ get service internet-dify-nginx -n \"$NAMESPACE\" 2>&1); then\n\
+                \            if ! echo \"$output\" | grep -q \"pending\"; then\n \
+                \               echo \"[SUCCESS] internet-dify-nginx 状态正常\"\n    \
+                \            return 0\n            fi\n        else\n            echo\
+                \ \"[ERROR] 获取状态失败: ${output:0:200}...\"\n        fi\n\n        if\
+                \ (( attempt % 5 == 0 )); then\n            echo \"[CHECK] internet-dify-nginx\
+                \ 检查中 (尝试次数: $attempt)\"\n        fi\n        \n        sleep $RETRY_DELAY\n\
+                \    done\n\n    echo \"[FATAL] internet-dify-nginx 未在预期时间内就绪\" >&2\n\
+                \    exit 1\n}\n\ncheck_deployment \n\necho \"服务部署完成\"\nkubectl-sae\
+                \ get service internet-dify-nginx -n \"$NAMESPACE\"\n\nexit 0"
+        driven: auto
+        plugins: []

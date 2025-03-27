@@ -6,6 +6,7 @@ import {
   removeNullValues,
   sortByDependsOn,
   addContextPrefix,
+  addContextPrefixWithoutGlobal,
 } from "./utils";
 import { getBuildInHelper } from "./buildin-helper";
 import Composer from "./composer";
@@ -30,6 +31,14 @@ class Engine {
   private mergedNames: Set<string> = new Set();
   private buildinComponents: Record<string, any> = {};
   private existedComponents: string[] = [];
+
+  core = {
+    render: (template: string, view: Record<string, any>) => {
+      return core.render(template, view, {}, {
+        formatToken: addContextPrefixWithoutGlobal,
+      });
+    }
+  }
 
   constructor() {
     this.init();

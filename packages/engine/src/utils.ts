@@ -226,3 +226,78 @@ export function addContextPrefix(p1: string, nameMapping?: Record<string, Record
   // console.log(result, '>>>>>>>>>>>>>>>>>>>')
   return result;
 }
+
+export function addContextPrefixWithoutGlobal(p1: string) {
+  // 记录当前是否在处理对象的键
+  let isProcessingObjectKey = false;
+
+  // 匹配对象字面量、标识符、字符串、数字和布尔值
+  const result = p1.replace(/({)|(:)|(})|(\$\w+(?:\.\$?\w+)*|\b\w+(?:\.\w+)*\b)|"[^"]*"|'[^']*'|\b\d+\b|\b(?:true|false|null|undefined)\b/g,
+    (match, objectStart, colon, objectEnd, identifier, offset, string) => {
+      // 处理对象开始标记
+      if (objectStart) {
+        isProcessingObjectKey = true;
+        return match;
+      }
+
+      // 处理冒号，表示从键切换到值
+      if (colon) {
+        isProcessingObjectKey = false;
+        return match;
+      }
+
+      // 处理对象结束标记
+      if (objectEnd) {
+        return match;
+      }
+
+      // 如果是字符串、数字或布尔值，直接返回
+      if (
+        (match.startsWith('"') && match.endsWith('"')) ||
+        (match.startsWith("'") && match.endsWith("'")) ||
+        /^\d+$/.test(match) ||
+        /^(true|false)$/.test(match)
+      ) {
+        return match;
+      }
+
+      // 处理特殊值
+      if (match === "undefined") {
+        return "undefined";
+      }
+      if (match === "null") {
+        return "null";
+      }
+
+      // 如果是对象的键，不添加前缀
+      if (isProcessingObjectKey) {
+        isProcessingObjectKey = false;  // 键处理完后重置状态
+        return match;
+      }
+
+      // 处理以 $ 开头的特殊变量
+      if (identifier && identifier.startsWith("$")) {
+        return "context." + identifier;
+      }
+
+      // 处理一般标识符
+      if (identifier && identifier.includes('.')) {
+        const parts = identifier.split('.');
+        // 如果第一部分已经是以 $ 开头，则不添加 __Global__
+        if (parts[0].startsWith("$")) {
+          return "context." + identifier;
+        } else {
+          parts[0] = `context.${parts[0]}`;
+          return parts.join('.');
+        }
+      }
+
+      if (identifier) {
+        return `context.${identifier}`;
+      }
+
+      
+      return match;
+    });
+  return result;
+}
