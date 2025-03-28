@@ -175,6 +175,7 @@ Resources:`,
         dependsOn: composerContent.DependsOn,
         componentName: composerContent.Component,
         existed: composerContent.Existed,
+        ref: composerContent.Ref,
       };
       const composerInstance = new Composer(
         composerData,
@@ -237,6 +238,7 @@ Resources:`,
         mergedNames: self.mergedNames,
         existed: composerInstance.existed,
         existedComponents: this.existedComponents,
+        ref: composerInstance.ref,
       };
 
       const componentInstance = new Component(data);

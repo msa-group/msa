@@ -38,7 +38,7 @@ class ParseEngine {
             const composerName = this.context.fullComponent[serviceName].composerName;
             return {
               ...serivce,
-              Ref: composerName
+              Ref: route.Ref || composerName
             }
           })
           return {
@@ -69,7 +69,7 @@ class ParseEngine {
         const backendComponent = get(this.context.fullComponent, backend, {});
         res[key] = {
           ...value,
-          Ref: backendComponent.composerName
+          Ref: value.Ref || backendComponent.composerName
         }
       } else if (type === 'backend') {
         res[key] = {
@@ -77,7 +77,6 @@ class ParseEngine {
         }
       }
     }
-
     return res;
   }
 }

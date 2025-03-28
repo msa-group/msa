@@ -10,12 +10,13 @@ class Composer {
   operation?: Record<string, any>;
   componentName: string;
   existed?: boolean;
-
+  ref?: string;
   constructor(data: ComposerData, global: GlobalData, nameMapping: Record<string, Record<string, string>>) {
     const localParameters = get(global, `Parameters.${data.name}`, {});
     this.existed = data.existed;
     this.name = data.name;
     this.props = data.props || {};
+    this.ref = data.ref;
     this.operation = data.operation;
     this.dependsOn = toNotEmptyArray(data.dependsOn).map(dep => {
       const curDep = get(nameMapping, dep);

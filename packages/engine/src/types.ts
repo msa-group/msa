@@ -51,4 +51,5 @@ export interface ComposerData {
   operation?: Record<string, any>;
   componentName: string;
   existed?: boolean;
+  ref?: string;
 }

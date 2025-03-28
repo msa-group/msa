@@ -127,7 +127,13 @@ export const getUtilsHelper = () => {
         ...a,
         ...b, 
       }
+    },
+
+    Connect: (...args: [][]) => {
+      return args.flat(1);
     }
+
+    
 
   }
   return Utils;

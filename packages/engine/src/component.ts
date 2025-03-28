@@ -20,6 +20,7 @@ class Component {
   componentName: string;
   composerName: string;
   existedComponents: string[];
+  ref?: string;
   constructor(data) {
     const json = data.json || {};
     this.name = data.name;
@@ -51,12 +52,16 @@ class Component {
     this.operation = data.operation;
     this.isResource = Boolean(data.json.MsaResource);
     this.componentName = data.componentName;
+    this.ref = data.ref;
   }
 
   toJson() {
     const others: Record<string, any> = {};
     if (this.dependsOn.length > 0) {
       others.DependsOn = this.dependsOn;
+    }
+    if (this.ref) {
+      others.Ref = this.ref;
     }
     const res = {
       ...this.json,
