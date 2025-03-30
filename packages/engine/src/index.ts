@@ -136,7 +136,6 @@ Resources:`,
       formatToken: addContextPrefix,
     });
     const composerJson = jsYaml.load(composerYaml);
-    // this.context.templateText.main = preparedText;
     this.#analyzeTemplate(composerJson);
     this.#parseSubTemplate(composerJson);
   }
@@ -206,6 +205,7 @@ Resources:`,
       Parameters: {
         ...this.context.data.Parameters,
         ...composerInstance.parameters,
+        ...get(composerInstance, `parameters.${composerInstance.name}`, {}),
       },
     };
     const globalData = { ...this.buildinHelpers, ...this.nameMapping };

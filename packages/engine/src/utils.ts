@@ -76,36 +76,6 @@ export const randomStringOrNumber = (function () {
 })();
 
 
-export function getLineNumber(str: string, index: number) {
-  const substring = str.substring(0, index);
-  const lineNumber = (substring.match(/\n/g) || []).length + 1;
-  return lineNumber;
-}
-
-export function getIndent(str: string, index: number) {
-  const lines = str.split('\n');
-  const line = getLineNumber(str, index);
-  const currentLineContext = lines[line - 1];
-  return currentLineContext.length - currentLineContext.trimStart().length;
-}
-
-
-export function findItemInContextData(data: Record<string, any>, id: string) {
-  for (const [key, value] of Object.entries(data)) {
-    const children = value.children;
-    const item = children.find(child => child.mergedName === id);
-    if (item) {
-      return { item, key };
-    }
-  }
-
-  return null;
-}
-
-export function removeFileExtension(fileName) {
-  return fileName.replace(/\.[^/.]+$/, '');
-}
-
 export function removeNullValues(obj: Record<string, any>) {
   // 遍历对象的所有属性
   for (const key in obj) {
@@ -211,7 +181,6 @@ export function addContextPrefix(p1: string, nameMapping?: Record<string, Record
       if (identifier) {
         t = identifier === "Parameters" ? `context.${identifier}` : `context.__Global__.${identifier}`;
         if (nameMapping) {
-          // console.log(nameMapping[match], match, '??????????????')
           if (nameMapping[match]) {
             if (!nameMapping[match].__resource__) {
               return undefined;
@@ -223,7 +192,6 @@ export function addContextPrefix(p1: string, nameMapping?: Record<string, Record
       }
       return match;
     });
-  // console.log(result, '>>>>>>>>>>>>>>>>>>>')
   return result;
 }
 

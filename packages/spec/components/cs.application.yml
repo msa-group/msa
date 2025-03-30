@@ -3,7 +3,7 @@ ClusterApplication:
   Type: ALIYUN::CS::ClusterApplication
   Properties:
     {{&Parameters.YamlContent}}
-    YamlContent: {{Indent(Parameters.YamlContent, 3)}}
+    YamlContent: {{Parameters.YamlContent}}
     {{/}}
     {{^IsNotEmpty(Parameters.YamlContent)}}
     YamlContent: |

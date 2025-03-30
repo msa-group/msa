@@ -77,7 +77,7 @@ PluginAttachmentToRoute{{Join([$parent.$index, $index])}}:
           {{$item.PluginId}}
         {{/}}
       PluginConfig:
-        Fn::Base64Encode: {{Indent($item.PluginConfig, 10)}}
+        Fn::Base64Encode: {{$item.PluginConfig}}
     AttachResourceType: {{Default($item.AttachResourceType, "GatewayRoute") }}
 {{/}}
 {{/}}

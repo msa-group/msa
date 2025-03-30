@@ -36,12 +36,12 @@ export const getUtilsHelper = () => {
         }
         // 处理多行字符串， 并且保持正确缩进
         if (value.includes("\n")) {
-          let s = '| \n';
-          const lines = value.split('\n');
-          for (let i = 0; i < lines.length; i++) {
-            s += `${' '.repeat(indent + 2)}${lines[i]}\n`;
+          try {
+            return JSON.stringify(value);
+          } catch (error) {
+            console.error("JSONStringify in buildin-helper error: ", error);
+            return value;
           }
-          return s;
         }
         try {
           // JSON.parse(value);
