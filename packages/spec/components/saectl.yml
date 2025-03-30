@@ -1,0 +1,76 @@
+ClusterApplication:
+  MsaResource: true
+  Type: ALIYUN::CS::ClusterApplication
+  Properties:
+    {{&Parameters.YamlContent}}
+    YamlContent: {{Indent(Parameters.YamlContent, 3)}}
+    {{/}}
+    {{^IsNotEmpty(Parameters.YamlContent)}}
+    YamlContent: |
+{{&Parameters.Namespace}}
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: {{Parameters.Namespace}}
+        labels: {{Merge(Get(Parameters, "Namespace.Labels", {}), { app: Parameters.AppName })}}
+{{/}}
+      {{#Default(Parameters.SecretConfig, [])}}
+      ---
+      apiVersion: v1
+      data: {{$item.Data}}
+      kind: Secret
+      metadata:
+        name: {{$item.Name}}
+        namespace: {{Default(Parameters.Namespace, 'default')}}
+      type: Opaque
+      {{/}}
+      {{#Default(Parameters.ConfigMap, [])}}
+      ---
+      apiVersion: v1
+      data: {{$item.Data}}
+      kind: ConfigMap
+      metadata:
+        name: {{$item.Name}}
+        namespace: {{Default(Parameters.Namespace, 'default')}}
+      {{/}}
+      ---
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        annotations: {{Get(Parameters, "Annotations", {})}}
+        name: {{Parameters.AppName}}
+        namespace: {{Default(Parameters.Namespace, 'default')}}
+        labels:
+          app: {{Parameters.AppName}}
+      spec:
+        replicas: {{Default(Parameters.Replicas, 1)}}
+        selector:
+          matchLabels:
+            sae.aliyun.com/app-name: {{Parameters.AppName}}
+        strategy:
+          rollingUpdate:
+            maxSurge: 0
+            maxUnavailable: 1
+          type: RollingUpdate
+        template:
+          metadata:
+            labels: {{Merge(Get(Parameters, "Labels", {}), { "sae.aliyun.com/app-name": Parameters.AppName })}}
+          spec:
+            containers:
+              - image: {{Parameters.Image}}
+                imagePullPolicy: Always
+                name: {{Parameters.AppName}}
+                resources: 
+                  limits:
+                    cpu: "4"
+                    memory: 8Gi
+                  requests:
+                    cpu: "4"
+                    memory: 8Gi
+                {{&Parameters.Env}}
+                env: {{Parameters.Env}}
+                {{/}}
+                envFrom: {{GetEnvFrom(Parameters.ConfigMap, Parameters.SecretConfig)}}
+            restartPolicy: Always
+            terminationGracePeriodSeconds: 30
+    {{/}}

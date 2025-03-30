@@ -1,6 +1,7 @@
 import { getComparionsHelper } from './comparison';
 import { getUtilsHelper } from './utils';
 import { getRosHelper } from './ros';
+import { getK8sHelper } from './k8s';
 
 
 export const getBuildInHelper = () => {
@@ -8,5 +9,6 @@ export const getBuildInHelper = () => {
     ...getComparionsHelper(),
     ...getUtilsHelper(),
     ...getRosHelper(),
+    ...getK8sHelper(),
   };
 }
