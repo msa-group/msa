@@ -25,6 +25,7 @@ PublishRoute{{$index}}:
     - {{Join(["Route", $index])}}
   Type: ALIYUN::APIG::ApiAttachment
   Properties:
+    DomainIds: {{Parameters.DomainIds}}
     EnvironmentId: {{Parameters.EnvironmentId}}
     BackendScene: {{$item.Scene}}
     RouteId:
